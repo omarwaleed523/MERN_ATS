@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { UserContext } from '../context/UserContext';
+import Cookies from 'js-cookie';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +13,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUser } = useContext(UserContext);
 
   const { email, password } = formData;
 
@@ -24,7 +27,6 @@ const Login = () => {
     setLoading(true);
     setError('');
 
-    // Validate email format
     if (!/\S+@\S+\.\S+/.test(email)) {
       setError('Please enter a valid email address.');
       setLoading(false);
@@ -33,8 +35,26 @@ const Login = () => {
 
     try {
       const res = await axios.post('http://localhost:5000/api/auth/login', formData);
-      alert(res.data.msg); // Show success message
-      navigate('/'); // Redirect to home page
+      console.log(res.data); // Log the response to verify profileImage
+
+      // Construct the full URL for the profile image
+      const profileImageUrl = `http://localhost:5000${res.data.profileImage}`;
+
+      // Set cookies for user ID and profile image
+      Cookies.set('userId', res.data.userId, { expires: 7 });
+      Cookies.set('profileImage', profileImageUrl, { expires: 7 });
+
+      // Set user profile image in context
+      setUser({ profileImage: profileImageUrl });
+
+      // Navigate to the appropriate home page
+      if (res.data.role === 'recruiter') {
+        navigate('/recruiterhome');
+      } else if (res.data.role === 'candidate') {
+        navigate('/candidatehome');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.response?.data?.msg || 'Invalid email or password.');
     } finally {

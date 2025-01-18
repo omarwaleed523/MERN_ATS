@@ -3,6 +3,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const cors = require('cors'); // Import cors
 require('dotenv').config();
+const path = require('path');
 
 const app = express();
 
@@ -12,6 +13,8 @@ connectDB();
 // Middleware
 app.use(express.json());
 app.use(cors()); // Enable CORS
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);

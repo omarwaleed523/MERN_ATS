@@ -1,11 +1,12 @@
 // authController.js
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 
 // Register User
 const register = async (req, res) => {
   const { name, email, password, phonenumber, role } = req.body;
-  const profilepicture = req.file ? req.file.path : null; // Get file path if uploaded
+  const profilepicture = req.file ? path.basename(req.file.path) : null; // Store only the filename
 
   console.log('Received data:', { name, email, password, phonenumber, role, profilepicture }); // Log received data
 
@@ -56,8 +57,15 @@ const login = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid email or password.' });
     }
 
-    // Return success response
-    res.status(200).json({ msg: 'Login successful.', user: { id: user._id, name: user.name, email: user.email } });
+    // Return success response with profileImage
+    res.status(200).json({
+      msg: 'Login successful.',
+      userId: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      profileImage: `/uploads/${user.profilepicture}` // Construct the URL for the image
+    });
   } catch (err) {
     console.error('Server error:', err); // Log server error
     res.status(500).send('Server error');
