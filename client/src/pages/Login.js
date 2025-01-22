@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, Profiler } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
@@ -40,17 +40,19 @@ const Login = () => {
       // Construct the full URL for the profile image
       const profileImageUrl = `http://localhost:5000${res.data.profileImage}`;
 
-      // Set cookies for user ID and profile image
+      // Set cookies for user ID, profile image, and token
       Cookies.set('userId', res.data.userId, { expires: 7 });
       Cookies.set('profileImage', profileImageUrl, { expires: 7 });
-
-      // Set user profile image in context
-      setUser({ profileImage: profileImageUrl });
+      Cookies.set('role', res.data.role, { expires: 7 }); // Ensure this is set correctly
+      Cookies.set('token', res.data.token, { expires: 7 });
+      // Set user profile image and role in context
+      console.log(profileImageUrl)
+      setUser({ profileImage: profileImageUrl, role: res.data.role });
 
       // Navigate to the appropriate home page
-      if (res.data.role === 'recruiter') {
+      if (res.data.role === 'Recruiter') {
         navigate('/recruiterhome');
-      } else if (res.data.role === 'candidate') {
+      } else if (res.data.role === 'Candidate') {
         navigate('/candidatehome');
       } else {
         navigate('/');

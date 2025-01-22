@@ -1,0 +1,11 @@
+.card {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Ensure the card takes full height */
+    padding: 16px; /* Adjust padding as needed */
+    border-radius: 8px; /* Adjust border radius as needed */
+}
+
+.button-container {
+    margin-top: auto; /* Push the button to the bottom */
+}

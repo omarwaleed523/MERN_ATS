@@ -10,23 +10,37 @@ const Navbar = () => {
     useEffect(() => {
         const profileImage = Cookies.get('profileImage');
         const userId = Cookies.get('userId');
+        const role = Cookies.get('role');
 
-        if (profileImage && userId) {
-            setUser({ profileImage });
+        if (userId) {
+            setUser({ profileImage, role });
         }
     }, [setUser]);
 
     const handleLogout = () => {
         Cookies.remove('userId');
         Cookies.remove('profileImage');
-        setUser({ profileImage: '' });
+        Cookies.remove('role');
+        setUser({ profileImage: '', role: '' });
         navigate('/login');
     };
 
     return (
-        <div className="navbar bg-base-100 shadow-md">
-            <div className="flex-1">
-                <a className="btn btn-ghost normal-case text-xl">MLAR</a>
+        <div className="navbar bg-base-100 shadow-md flex justify-between items-center">
+            <div className="flex">
+                <Link to='/'> <span className="btn btn-ghost normal-case text-xl">MLAR</span></Link>
+            </div>
+            <div className="flex justify-center space-x-4 flex-1">
+
+                {user.role === 'Recruiter' && (
+                    <Link to='/recruiterhome'><button className='button'>Recruiter Dashboard</button></Link>
+                )}
+                {user.role === 'Candidate' && (<>
+                    <Link to='/candidatehome'><button className='button'>Job Posts</button></Link>
+                    <Link to='/parseresume'><button className='button'>Parse Resume</button></Link>
+                    <Link to={`/applications/${Cookies.get('userId')}`}><button className='button'>Applications</button></Link>
+                </>
+                )}
             </div>
             <div className="flex-none">
                 {user.profileImage ? (
@@ -47,8 +61,8 @@ const Navbar = () => {
                     </div>
                 ) : (
                     <div className="flex space-x-4">
-                        <Link to="/login" className="btn btn-primary">Login</Link>
-                        <Link to="/signup" className="btn btn-secondary">Signup</Link>
+                        <Link to="/login" className="button">Login</Link>
+                        <Link to="/signup" className="btnsecondary">Signup</Link>
                     </div>
                 )}
             </div>

@@ -147,9 +147,8 @@ const Signup = () => {
               value={name}
               onChange={onChange}
               placeholder="Enter your name"
-              className={`mt-1 block w-full px-4 py-2 border ${
-                fieldErrors.name ? 'border-red-500' : 'border-gray-300'
-              } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+              className={`mt-1 block w-full px-4 py-2 border ${fieldErrors.name ? 'border-red-500' : 'border-gray-300'
+                } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
               required
             />
             {fieldErrors.name && <p className="text-red-500 text-sm mt-1">{fieldErrors.name}</p>}
@@ -164,9 +163,8 @@ const Signup = () => {
               value={email}
               onChange={onChange}
               placeholder="Enter your email"
-              className={`mt-1 block w-full px-4 py-2 border ${
-                emailError || fieldErrors.email ? 'border-red-500' : 'border-gray-300'
-              } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+              className={`mt-1 block w-full px-4 py-2 border ${emailError || fieldErrors.email ? 'border-red-500' : 'border-gray-300'
+                } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
               required
             />
             {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
@@ -183,9 +181,8 @@ const Signup = () => {
                 value={password}
                 onChange={onChange}
                 placeholder="Enter your password"
-                className={`mt-1 block w-full px-4 py-2 border ${
-                  fieldErrors.password ? 'border-red-500' : 'border-gray-300'
-                } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                className={`mt-1 block w-full px-4 py-2 border ${fieldErrors.password ? 'border-red-500' : 'border-gray-300'
+                  } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                 required
               />
               <button
@@ -233,13 +230,11 @@ const Signup = () => {
               name="role"
               value={role}
               onChange={onChange}
-              className={`mt-1 block w-full px-4 py-2 border ${
-                fieldErrors.role ? 'border-red-500' : 'border-gray-300'
-              } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+              className={`mt-1 block w-full px-4 py-2 border ${fieldErrors.role ? 'border-red-500' : 'border-gray-300'
+                } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
               required
             >
               <option value="Recruiter">Recruiter</option>
-              <option value="Administrator">Administrator</option>
               <option value="Candidate">Candidate</option>
             </select>
             {fieldErrors.role && <p className="text-red-500 text-sm mt-1">{fieldErrors.role}</p>}
