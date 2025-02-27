@@ -1,8 +1,20 @@
 const mongoose = require('mongoose');
 
 const JobPostSchema = new mongoose.Schema({
-    title: { type: String, required: true },
-    description: { type: String, required: true },
+    jobTitle: { type: String, required: true },
+    skills: { type: [String], required: true },
+    experience: [{
+        title: String,
+        company: String,
+        dates: String,
+        description: String
+    }],
+    education: [{
+        degree: String,
+        university: String,
+        location: String
+    }],
+    department: { type: String, required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     createdAt: { type: Date, default: Date.now }
 });

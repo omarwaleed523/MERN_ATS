@@ -4,7 +4,7 @@ const path = require('path');
 const runPythonScript = (filePath) => {
     return new Promise((resolve, reject) => {
         // Resolve the absolute path to the Python script
-        const pythonScriptPath = path.resolve(__dirname, process.env.PYTHON_SCRIPT_PATH);
+        const pythonScriptPath = path.resolve(__dirname, process.env.PYTHON_SCRIPT_PATH_RESUME);
 
         // Log the Python script path for debugging
         console.log(`Python Script Path: ${pythonScriptPath}`);

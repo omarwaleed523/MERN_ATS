@@ -8,11 +8,11 @@ import RecruiterHome from './pages/RecruiterHome';
 import CandidateHome from './pages/CandidateHome';
 import Navbar from './Components/Navbar';
 import './App.css';
-import JobPostedit from './pages/JobPostedit';
 import Resumeparsing from './pages/Resumeparsing';
 import EditResume from './pages/Editresume';
 import UserApplications from './pages/UserApplications';
-
+import EditJobPost from './pages/EditJobPost';
+import UploadJobPost from './pages/UploadJobPost';
 const App = () => (
   <>
     <UserProvider>
@@ -24,10 +24,11 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/recruiterhome" element={<RecruiterHome />} />
           <Route path="/candidatehome" element={<CandidateHome />} />
-          <Route path="/editjobpost" element={<JobPostedit />} />
+          <Route path="/editjobpost" element={<EditJobPost />} />
           <Route path="/parseresume" element={<Resumeparsing />} />
           <Route path="/editresume/:resumeId" element={<EditResume />} />
           <Route path="/applications/:userId" element={<UserApplications />} />
+          <Route path="/addjobpost" element={<UploadJobPost />} />
         </Routes>
       </Router>
     </UserProvider>

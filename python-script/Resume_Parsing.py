@@ -57,7 +57,7 @@ Return the data in JSON format with these fields as keys.
 """
 
 # Initialize Gemini model
-MODEL = genai.GenerativeModel("models/gemini-1.5-flash", system_instruction=INSTRUCTION)
+MODEL = genai.GenerativeModel("models/gemini-2.0-flash", system_instruction=INSTRUCTION)
 
 
 def extract_text_from_pdf(pdf_path):

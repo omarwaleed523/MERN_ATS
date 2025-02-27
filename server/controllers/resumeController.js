@@ -1,5 +1,5 @@
 const { saveResume, getAllResumes, getResumeById: fetchResumeById, updateResume: updateResumeService } = require('../services/resumeService');
-const { runPythonScript } = require('../utils/pythonRunner');
+const { runPythonScript } = require('../utils/pythonRunnerResume');
 const multer = require('multer');
 const fs = require('fs');
 const Resume = require('../models/Resume');

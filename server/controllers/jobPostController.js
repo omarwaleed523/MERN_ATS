@@ -1,11 +1,31 @@
-const JobPost = require('../models/Jobpost');
+const JobPost = require('../models/JobPost');
+const { runPythonScript } = require('../utils/pythonRunnerJD');
+const fs = require('fs');
+const multer = require('multer');
 
-// Create a new job post
+// Multer storage for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname);
+    }
+});
+const uploadFile = multer({ storage: storage });
+
+// Manual creation of a job post (if needed)
 const createJobPost = async (req, res) => {
-    const { title, description, userId } = req.body; // Get userId from request body
-
+    const { jobTitle, skills, experience, education, department, userId } = req.body;
     try {
-        const jobPost = new JobPost({ title, description, userId }); // Save userId with job post
+        const jobPost = new JobPost({
+            jobTitle,
+            skills,
+            experience,
+            education,
+            department,
+            userId
+        });
         await jobPost.save();
         res.status(201).json({ message: 'Job post created successfully!', jobPost });
     } catch (error) {
@@ -14,10 +34,16 @@ const createJobPost = async (req, res) => {
     }
 };
 
-// Get all job posts
+// Get all job posts; if a userId query param is provided, filter by that recruiter
 const getAllJobPosts = async (req, res) => {
     try {
-        const jobPosts = await JobPost.find(); // No authentication needed
+        const { userId } = req.query;
+        let jobPosts = [];
+        if (userId) {
+            jobPosts = await JobPost.find({ userId });
+        } else {
+            jobPosts = await JobPost.find();
+        }
         res.status(200).json(jobPosts);
     } catch (error) {
         console.error('Error retrieving job posts:', error);
@@ -27,7 +53,6 @@ const getAllJobPosts = async (req, res) => {
 
 const getJobPostById = async (req, res) => {
     const { jobPostId } = req.params;
-
     try {
         const jobPost = await JobPost.findById(jobPostId);
         if (!jobPost) {
@@ -42,10 +67,13 @@ const getJobPostById = async (req, res) => {
 
 const updateJobPost = async (req, res) => {
     const { jobPostId } = req.params;
-    const { title, description, userId } = req.body; // Get userId from request body
-
+    const { jobTitle, skills, experience, education, department, userId } = req.body;
     try {
-        const jobPost = await JobPost.findByIdAndUpdate(jobPostId, { title, description, userId }, { new: true });
+        const jobPost = await JobPost.findByIdAndUpdate(
+            jobPostId,
+            { jobTitle, skills, experience, education, department, userId },
+            { new: true }
+        );
         if (!jobPost) {
             return res.status(404).json({ message: 'Job post not found.' });
         }
@@ -58,7 +86,6 @@ const updateJobPost = async (req, res) => {
 
 const deleteJobPost = async (req, res) => {
     const { jobPostId } = req.params;
-
     try {
         const jobPost = await JobPost.findByIdAndDelete(jobPostId);
         if (!jobPost) {
@@ -71,4 +98,64 @@ const deleteJobPost = async (req, res) => {
     }
 };
 
-module.exports = { createJobPost, getAllJobPosts, getJobPostById, updateJobPost, deleteJobPost };
+// New method: Upload a job post file, process JD data via Python, then create a JobPost
+const uploadJobPost = async (req, res) => {
+    const { userId } = req.body;  // Recruiter's ID from frontend
+    if (!userId) {
+        return res.status(400).json({ message: 'User ID is required' });
+    }
+    const filePath = req.file.path;
+    try {
+        const pythonResponse = await runPythonScript(filePath);
+        if (pythonResponse) {
+            const jobTitle = pythonResponse.JobTitle || "Untitled Job Post";
+            const skills = (pythonResponse.Skills && Array.isArray(pythonResponse.Skills)) ? pythonResponse.Skills : [];
+            const experience = (pythonResponse.Experience && Array.isArray(pythonResponse.Experience))
+                ? pythonResponse.Experience.map(expObj => ({
+                    title: expObj.Title,
+                    company: expObj.Company,
+                    dates: expObj.Dates,
+                    description: expObj.description
+                }))
+                : [];
+            const education = (pythonResponse.Education && Array.isArray(pythonResponse.Education))
+                ? pythonResponse.Education.map(eduObj => ({
+                    degree: eduObj.Degree,
+                    university: eduObj.University,
+                    location: eduObj.Location
+                }))
+                : [];
+            const department = pythonResponse.Department || "";
+
+            const jobPost = new JobPost({
+                jobTitle,
+                skills,
+                experience,
+                education,
+                department,
+                userId
+            });
+            await jobPost.save();
+            res.status(201).json({ message: 'Job post created successfully!', jobPost });
+        } else {
+            res.status(500).json({ message: 'Failed to process job post file' });
+        }
+    } catch (error) {
+        console.error('Error uploading job post:', error);
+        res.status(500).json({ message: 'Failed to create job post.' });
+    } finally {
+        fs.unlink(filePath, (err) => {
+            if (err) console.error('Error deleting file:', err);
+        });
+    }
+};
+
+module.exports = {
+    createJobPost,
+    getAllJobPosts,
+    getJobPostById,
+    updateJobPost,
+    deleteJobPost,
+    uploadJobPost,   // Export the new upload method
+    uploadFile       // Export the multer instance for routes
+};
