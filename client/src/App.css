@@ -42,7 +42,6 @@
   --hover-text: #000;
   color: #fff;
   cursor: pointer;
-  height: 3em;
   border: 1px solid var(--bg);
   border-radius: 4px;
   padding: 0.8em 2em;
@@ -68,7 +67,6 @@
   --hover-text: #000;
   color: #fff;
   cursor: pointer;
-  height: 3em;
   border: 1px solid var(--bg);
   border-radius: 4px;
   padding: 0.8em 2em;

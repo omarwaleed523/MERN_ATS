@@ -10,7 +10,7 @@ import os
 os.environ['GRPC_ENABLE_FORK_SUPPORT'] = '0'
 
 # Configure Gemini API
-GEMINI_API_KEY = "AIzaSyBi18Mq5DYWKAqXESc4FVTnuX3j_kSDFNw"
+GEMINI_API_KEY = "AIzaSyA5l9-6IZvEZTbKvJsyAKQq8wkpNET_h6o"
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Instruction for the Gemini model

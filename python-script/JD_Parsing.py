@@ -26,199 +26,177 @@ PROMPT_TEMPLATE = """
 Analyze this job description and extract structured data. Follow these rules:
 
 1. **JobTitle**: Official position title (required)
-2. **Skills**: List technical/soft skills (max 15, required)
-3. **Experience**: Extract required experience with:
-   - **Title**: Position name (e.g., "Senior Accountant")
-   - **Company**: Leave this field empty (do not use "Required Experience")
-   - **Dates**: Duration format (e.g., "3-5 years")
-   - **Description**: Specific responsibilities or achievements (bullet points or sentences)
-4. **Education**: Extract required education with:
-   - **Degree**: Qualification name (e.g., "Master of Science in Accounting")
-   - **University**: Name of the institution (e.g., "New York University")
-   - **Location**: Country/region if specified (e.g., "New York, NY")
-5. **Department**: Categorize using exactly these options:
+2. **Salary**: Extract salary range or fixed amount (required, numeric)
+3. **Location**: Job location (required)
+4. **JobDescription**: Full job description text (required)
+5. **Company**: Company name (required)
+6. **Skills**: List technical/soft skills (max 15, required)
+7. **Experience**: Extract required experience with:
+   - **Title**: Position name
+   - **Company**: Company name if mentioned
+   - **Dates**: Duration format
+   - **Description**: Specific responsibilities
+8. **Education**: Extract required education with:
+   - **Degree**: Qualification name
+   - **University**: Institution name
+   - **Location**: Location if specified
+9. **Department**: Categorize using exactly these options:
    {departments}
 
 Return VALID JSON only. Follow this structure exactly:
 {{
-  "JobTitle": "",
-  "Skills": [],
-  "Experience": [
+  "jobTitle": "",
+  "salary": 0,
+  "location": "",
+  "jobDescription": "",
+  "company": "",
+  "skills": [],
+  "experience": [
     {{
-      "Title": "",
-      "Company": "",
-      "Dates": "",
+      "title": "",
+      "company": "",
+      "dates": "",
       "description": ""
     }}
   ],
-  "Education": [
+  "education": [
     {{
-      "Degree": "",
-      "University": "",
-      "Location": ""
+      "degree": "",
+      "university": "",
+      "location": ""
     }}
   ],
-  "Department": ""
+  "department": ""
 }}
 
 Example Input:
-Job Title: Senior Accountant
-Department: ACCOUNTANT
-Location: New York, NY
+Senior Software Engineer
+Company: Tech Solutions Inc.
+Location: San Francisco, CA
+Salary: $120,000 - $150,000
 ________________________________________
 Job Description:
-We are seeking a detail-oriented Senior Accountant to join our finance team. The ideal candidate will have extensive experience in corporate accounting and financial reporting.
-________________________________________
-Key Skills Required:
-• Advanced knowledge of GAAP
-• Proficiency in QuickBooks and SAP
-• Advanced Excel skills (PivotTables, VLOOKUP)
-• Tax preparation and compliance
-• Financial statement analysis
-• Accounts payable/receivable management
-• Budget forecasting
-• Audit preparation
-________________________________________
-Experience Requirements:
-1. Senior Accountant
-Duration: 3-5 years
-• Managed full-cycle accounting for $10M+ organization
-• Prepared monthly financial statements and reports
-• Led annual audit processes with external firms
-• Supervised team of 3 junior accountants
-2. Junior Accountant
-Duration: 2+ years
-• Processed accounts payable/receivable
-• Assisted with monthly closing procedures
-• Maintained general ledger accounts
-• Performed bank reconciliations
-________________________________________
-Education Requirements:
-1. Master of Science in Accounting
-University: New York University
-Location: New York, NY
-2. Bachelor of Business Administration (Accounting)
-University: Baruch College
-Location: New York, NY
-3. Certified Public Accountant (CPA)
-University: American Institute of CPAs
-Location: United States
-________________________________________
-Additional Requirements:
-• Strong understanding of tax regulations (IRS/SEC)
-• Experience with ERP systems implementation
-• Excellent communication skills for cross-department collaboration
+We are seeking an experienced Senior Software Engineer to join our dynamic team...
+[rest of example]
 
 Example Output:
 {{
-  "JobTitle": "Senior Accountant",
-  "Skills": [
-    "Advanced knowledge of GAAP",
-    "Proficiency in QuickBooks and SAP",
-    "Advanced Excel skills (PivotTables, VLOOKUP)",
-    "Tax preparation and compliance",
-    "Financial statement analysis",
-    "Accounts payable/receivable management",
-    "Budget forecasting",
-    "Audit preparation",
-    "Strong understanding of tax regulations (IRS/SEC)",
-    "Experience with ERP systems implementation",
-    "Excellent communication skills"
-  ],
-  "Experience": [
+  "jobTitle": "Senior Software Engineer",
+  "salary": 120000,
+  "location": "San Francisco, CA",
+  "jobDescription": "We are seeking an experienced Senior Software Engineer to join our dynamic team...",
+  "company": "Tech Solutions Inc.",
+  "skills": ["JavaScript", "React", "Node.js", "MongoDB", "AWS"],
+  "experience": [
     {{
-      "Title": "Senior Accountant",
-      "Company": "",
-      "Dates": "3-5 years",
-      "description": "Managed full-cycle accounting for $10M+ organization; Prepared monthly financial statements and reports; Led annual audit processes with external firms; Supervised team of 3 junior accountants"
-    }},
-    {{
-      "Title": "Junior Accountant",
-      "Company": "",
-      "Dates": "2+ years",
-      "description": "Processed accounts payable/receivable; Assisted with monthly closing procedures; Maintained general ledger accounts; Performed bank reconciliations"
+      "title": "Software Engineer",
+      "company": "Previous Tech Corp",
+      "dates": "3+ years",
+      "description": "Led development of scalable web applications"
     }}
   ],
-  "Education": [
+  "education": [
     {{
-      "Degree": "Master of Science in Accounting",
-      "University": "New York University",
-      "Location": "New York, NY"
-    }},
-    {{
-      "Degree": "Bachelor of Business Administration (Accounting)",
-      "University": "Baruch College",
-      "Location": "New York, NY"
-    }},
-    {{
-      "Degree": "Certified Public Accountant (CPA)",
-      "University": "American Institute of CPAs",
-      "Location": "United States"
+      "degree": "Bachelor of Science in Computer Science",
+      "university": "Stanford University",
+      "location": "Stanford, CA"
     }}
   ],
-  "Department": "ACCOUNTANT"
+  "department": "INFORMATION-TECHNOLOGY"
 }}
 """.format(departments=VALID_DEPARTMENTS)
 
 def extract_text(file_path):
-    """Extract text from PDF/DOCX/TXT files with error handling."""
+    """Extract text from PDF/DOCX files with enhanced error handling"""
+    if not os.path.exists(file_path):
+        print(f"File not found: {file_path}", file=sys.stderr)
+        return None
+
     try:
         if file_path.endswith('.pdf'):
             return extract_pdf_text(file_path)
         elif file_path.endswith('.docx'):
-            text = docx2txt.process(file_path)
-            return text.replace('\t', ' ')
-        elif file_path.endswith('.txt'):
-            with open(file_path, 'r', encoding='utf-8') as file:
-                return file.read()
-        raise ValueError("Unsupported file format")
+            return docx2txt.process(file_path)
+        else:
+            print(f"Unsupported file format: {file_path}", file=sys.stderr)
+            return None
     except Exception as e:
         print(f"Text extraction error: {str(e)}", file=sys.stderr)
         return None
 
-def validate_structure(data):
-    """Validate the parsed JSON structure."""
-    required_fields = ['JobTitle', 'Skills', 'Experience', 'Education', 'Department']
-    if not all(field in data for field in required_fields):
+def validate_json_structure(data):
+    """Validate the parsed JSON structure"""
+    required_fields = {
+        'jobTitle': str,
+        'salary': (int, float),
+        'location': str,
+        'jobDescription': str,
+        'company': str,
+        'skills': list,
+        'department': str
+    }
+
+    try:
+        for field, field_type in required_fields.items():
+            if field not in data:
+                print(f"Missing required field: {field}", file=sys.stderr)
+                return False
+            if not isinstance(data[field], field_type):
+                print(f"Invalid type for field {field}", file=sys.stderr)
+                return False
+        
+        if data['department'] not in VALID_DEPARTMENTS:
+            print(f"Invalid department: {data['department']}", file=sys.stderr)
+            return False
+
+        return True
+    except Exception as e:
+        print(f"Validation error: {str(e)}", file=sys.stderr)
         return False
-    return data['Department'] in VALID_DEPARTMENTS
 
 def parse_jd(text):
-    """Parse JD text using Gemini with enhanced error handling."""
+    """Parse job description text using Gemini"""
     try:
         response = MODEL.generate_content([PROMPT_TEMPLATE, text])
-        json_match = re.search(r'```json(.*?)```', response.text, re.DOTALL) or \
-                     re.search(r'\{.*\}', response.text, re.DOTALL)
         
-        if not json_match:
-            return None
+        # Extract JSON from response
+        json_str = response.text.strip()
+        if json_str.startswith('```json'):
+            json_str = json_str[7:-3]  # Remove ```json and ``` markers
+        elif json_str.startswith('```'):
+            json_str = json_str[3:-3]  # Remove ``` markers
             
-        json_str = json_match.group(1) or json_match.group(0)
-        parsed = json.loads(json_str.strip())
+        parsed_data = json.loads(json_str)
         
-        return parsed if validate_structure(parsed) else None
-        
+        if validate_json_structure(parsed_data):
+            return parsed_data
+        return None
+
     except Exception as e:
         print(f"Parsing error: {str(e)}", file=sys.stderr)
         return None
 
-if __name__ == "__main__":
+def main():
+    """Main function with proper error handling"""
     if len(sys.argv) != 2:
         print("Usage: python JD_Parsing.py <file_path>", file=sys.stderr)
         sys.exit(1)
 
-    try:
-        text = extract_text(sys.argv[1])
-        if not text:
-            sys.exit(1)
-            
-        result = parse_jd(text)
-        if result:
-            print(json.dumps(result))  # Only JSON output to stdout
-            sys.exit(0)
-            
+    file_path = sys.argv[1]
+    
+    # Extract text
+    text = extract_text(file_path)
+    if not text:
         sys.exit(1)
-        
-    except Exception as e:
-        print(f"Critical error: {str(e)}", file=sys.stderr)
+
+    # Parse JD
+    result = parse_jd(text)
+    if not result:
         sys.exit(1)
+
+    # Output JSON to stdout
+    print(json.dumps(result))
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()

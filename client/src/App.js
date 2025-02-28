@@ -13,6 +13,7 @@ import EditResume from './pages/Editresume';
 import UserApplications from './pages/UserApplications';
 import EditJobPost from './pages/EditJobPost';
 import UploadJobPost from './pages/UploadJobPost';
+import Viewjobpost from './pages/Viewjobpost';
 const App = () => (
   <>
     <UserProvider>
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/editresume/:resumeId" element={<EditResume />} />
           <Route path="/applications/:userId" element={<UserApplications />} />
           <Route path="/addjobpost" element={<UploadJobPost />} />
+          <Route path="/viewjobpost/:id" element={<Viewjobpost />} />
         </Routes>
       </Router>
     </UserProvider>

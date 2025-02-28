@@ -3,56 +3,87 @@ import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
+const VALID_DEPARTMENTS = [
+    "ACCOUNTANT", "ADVOCATE", "AGRICULTURE", "APPAREL", "ARTS", "AUTOMOBILE",
+    "AVIATION", "BANKING", "BPO", "BUSINESS-DEVELOPMENT", "CHEF", "CONSTRUCTION",
+    "CONSULTANT", "DESIGNER", "DIGITAL-MEDIA", "ENGINEERING", "FINANCE", "FITNESS",
+    "HEALTHCARE", "HR", "INFORMATION-TECHNOLOGY", "PUBLIC-RELATIONS", "SALES", "TEACHER"
+];
+
 const EditJobPost = () => {
     const { state } = useLocation();
     const { job } = state || {};
     const navigate = useNavigate();
 
-    const [jobTitle, setJobTitle] = useState(job?.jobTitle || '');
-    const [department, setDepartment] = useState(job?.department || '');
-    const [skills, setSkills] = useState(job?.skills?.filter(skill => skill !== 'null' && skill).join(', ') || '');
+    const [formData, setFormData] = useState({
+        jobTitle: job?.jobTitle || '',
+        salary: job?.salary || '',
+        location: job?.location || '',
+        jobDescription: job?.jobDescription || '',
+        company: job?.company || '',
+        department: job?.department || '',
+        skills: job?.skills?.filter(skill => skill !== 'null' && skill).join(', ') || '',
+        experience: job?.experience?.filter(exp => exp.title !== 'null' && exp.title) ||
+            [{ title: '', company: '', dates: '', description: '' }],
+        education: job?.education?.filter(edu => edu.degree !== 'null' && edu.degree) ||
+            [{ degree: '', university: '', location: '' }]
+    });
 
-    // Initialize experience as an array of objects
-    const [experiences, setExperiences] = useState(
-        job?.experience?.filter(exp => exp.title !== 'null' && exp.title) ||
-        [{ title: '', company: '', dates: '', description: '' }]
-    );
-
-    // Initialize education as an array of objects
-    const [educations, setEducations] = useState(
-        job?.education?.filter(edu => edu.degree !== 'null' && edu.degree) ||
-        [{ degree: '', university: '', location: '' }]
-    );
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
 
     const handleExperienceChange = (index, field, value) => {
-        const newExperiences = [...experiences];
+        const newExperiences = [...formData.experience];
         newExperiences[index][field] = value;
-        setExperiences(newExperiences);
+        setFormData(prev => ({
+            ...prev,
+            experience: newExperiences
+        }));
     };
 
     const handleEducationChange = (index, field, value) => {
-        const newEducations = [...educations];
+        const newEducations = [...formData.education];
         newEducations[index][field] = value;
-        setEducations(newEducations);
+        setFormData(prev => ({
+            ...prev,
+            education: newEducations
+        }));
     };
 
     const addExperience = () => {
-        setExperiences([...experiences, { title: '', company: '', dates: '', description: '' }]);
+        setFormData(prev => ({
+            ...prev,
+            experience: [...prev.experience, { title: '', company: '', dates: '', description: '' }]
+        }));
     };
 
     const removeExperience = (index) => {
-        if (experiences.length > 1) {
-            setExperiences(experiences.filter((_, i) => i !== index));
+        if (formData.experience.length > 1) {
+            setFormData(prev => ({
+                ...prev,
+                experience: formData.experience.filter((_, i) => i !== index)
+            }));
         }
     };
 
     const addEducation = () => {
-        setEducations([...educations, { degree: '', university: '', location: '' }]);
+        setFormData(prev => ({
+            ...prev,
+            education: [...prev.education, { degree: '', university: '', location: '' }]
+        }));
     };
 
     const removeEducation = (index) => {
-        if (educations.length > 1) {
-            setEducations(educations.filter((_, i) => i !== index));
+        if (formData.education.length > 1) {
+            setFormData(prev => ({
+                ...prev,
+                education: formData.education.filter((_, i) => i !== index)
+            }));
         }
     };
 
@@ -60,14 +91,18 @@ const EditJobPost = () => {
         e.preventDefault();
         try {
             const userId = Cookies.get('userId');
-            const skillsArray = skills.split(',').map(item => item.trim()).filter(item => item);
+            const skillsArray = formData.skills.split(',').map(item => item.trim()).filter(item => item);
 
             await axios.put(`http://localhost:5000/api/jobposts/${job._id}`, {
-                jobTitle,
+                jobTitle: formData.jobTitle,
+                salary: formData.salary,
+                location: formData.location,
+                jobDescription: formData.jobDescription,
+                company: formData.company,
+                department: formData.department,
                 skills: skillsArray,
-                experience: experiences.filter(exp => exp.title.trim()),
-                education: educations.filter(edu => edu.degree.trim()),
-                department,
+                experience: formData.experience.filter(exp => exp.title.trim()),
+                education: formData.education.filter(edu => edu.degree.trim()),
                 userId
             });
             navigate('/recruiterhome');
@@ -77,102 +112,162 @@ const EditJobPost = () => {
     };
 
     return (
-        <div className="container mx-auto p-4">
-            <h1 className="text-3xl font-bold mb-4">Edit Job Post</h1>
-            <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md space-y-6">
+        <div className="max-w-7xl mx-auto p-8">
+            <h1 className="text-2xl font-bold text-[#9C4C7C] mb-6">Edit Job Post</h1>
+            <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-lg p-6">
                 {/* Job Title */}
                 <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2">Job Title</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
                     <input
                         type="text"
-                        value={jobTitle}
-                        onChange={(e) => setJobTitle(e.target.value)}
-                        className="input input-bordered w-full"
+                        name="jobTitle"
+                        value={formData.jobTitle}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 rounded-full bg-pink-50 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
+                        required
+                    />
+                </div>
+
+                {/* Company */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
+                    <input
+                        type="text"
+                        name="company"
+                        value={formData.company}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 rounded-full bg-pink-100 text-gray-700 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
+                        required
+                    />
+                </div>
+
+                {/* Location */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                    <input
+                        type="text"
+                        name="location"
+                        value={formData.location}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 rounded-full  bg-pink-100 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
+                        required
+                    />
+                </div>
+
+                {/* Salary */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Salary</label>
+                    <input
+                        type="number"
+                        name="salary"
+                        value={formData.salary}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 rounded-full bg-pink-100 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
                         required
                     />
                 </div>
 
                 {/* Department */}
                 <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2">Department</label>
-                    <input
-                        type="text"
-                        value={department}
-                        onChange={(e) => setDepartment(e.target.value)}
-                        className="input input-bordered w-full"
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                    <select
+                        name="department"
+                        value={formData.department}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 rounded-full bg-pink-100 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
+                        required
+                    >
+                        <option value="">Select Department</option>
+                        {VALID_DEPARTMENTS.map(dept => (
+                            <option key={dept} value={dept}>{dept.replace(/-/g, ' ')}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Job Description */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Job Description</label>
+                    <textarea
+                        name="jobDescription"
+                        value={formData.jobDescription}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 rounded-2xl bg-pink-100 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
+                        rows="4"
                         required
                     />
                 </div>
 
                 {/* Skills */}
                 <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2">Skills (comma separated)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Skills (comma separated)</label>
                     <input
                         type="text"
-                        value={skills}
-                        onChange={(e) => setSkills(e.target.value)}
-                        className="input input-bordered w-full"
-                        placeholder="e.g., JavaScript, Node.js, React"
+                        name="skills"
+                        value={formData.skills}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 rounded-full bg-pink-100 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
+                        placeholder="e.g., Project management, Communication skills"
+                        required
                     />
                 </div>
 
                 {/* Experience Section */}
                 <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <label className="block text-gray-700 text-sm font-bold">Experience</label>
-                        <button type="button" onClick={addExperience} className="btn btn-sm btn-primary">
+                    <div className="flex justify-between items-center mb-4">
+                        <label className="block text-sm font-medium text-gray-700">Experience</label>
+                        <button
+                            type="button"
+                            onClick={addExperience}
+                            className="px-4 py-1 rounded-full bg-pink-500 text-white text-sm hover:bg-pink-600 transition-colors"
+                        >
                             Add Experience
                         </button>
                     </div>
-                    {experiences.map((exp, index) => (
-                        <div key={index} className="bg-gray-50 p-4 rounded mb-4">
+                    {formData.experience.map((exp, index) => (
+                        <div key={index} className="mb-6 p-4 bg-pink-50 rounded-2xl">
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label className="block text-sm mb-1">Title</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
                                     <input
                                         type="text"
                                         value={exp.title}
                                         onChange={(e) => handleExperienceChange(index, 'title', e.target.value)}
-                                        className="input input-bordered w-full"
-                                        placeholder="Job Title"
+                                        className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm mb-1">Company</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
                                     <input
                                         type="text"
                                         value={exp.company}
                                         onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
-                                        className="input input-bordered w-full"
-                                        placeholder="Company Name"
+                                        className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
                                     />
                                 </div>
                             </div>
                             <div className="mb-4">
-                                <label className="block text-sm mb-1">Dates</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Dates</label>
                                 <input
                                     type="text"
                                     value={exp.dates}
                                     onChange={(e) => handleExperienceChange(index, 'dates', e.target.value)}
-                                    className="input input-bordered w-full"
-                                    placeholder="e.g., 2018-2020"
+                                    className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
                                 />
                             </div>
-                            <div className="mb-2">
-                                <label className="block text-sm mb-1">Description</label>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                                 <textarea
                                     value={exp.description}
                                     onChange={(e) => handleExperienceChange(index, 'description', e.target.value)}
-                                    className="textarea textarea-bordered w-full"
-                                    placeholder="Job Description"
+                                    className="w-full px-4 py-2 rounded-2xl bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
                                     rows="3"
                                 />
                             </div>
-                            {experiences.length > 1 && (
+                            {formData.experience.length > 1 && (
                                 <button
                                     type="button"
                                     onClick={() => removeExperience(index)}
-                                    className="btn btn-sm btn-error"
+                                    className="mt-4 px-4 py-1 rounded-full bg-red-500 text-white text-sm hover:bg-red-600 transition-colors"
                                 >
                                     Remove
                                 </button>
@@ -183,51 +278,52 @@ const EditJobPost = () => {
 
                 {/* Education Section */}
                 <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <label className="block text-gray-700 text-sm font-bold">Education</label>
-                        <button type="button" onClick={addEducation} className="btn btn-sm btn-primary">
+                    <div className="flex justify-between items-center mb-4">
+                        <label className="block text-sm font-medium text-gray-700">Education</label>
+                        <button
+                            type="button"
+                            onClick={addEducation}
+                            className="px-4 py-1 rounded-full bg-pink-500 text-white text-sm hover:bg-pink-600 transition-colors"
+                        >
                             Add Education
                         </button>
                     </div>
-                    {educations.map((edu, index) => (
-                        <div key={index} className="bg-gray-50 p-4 rounded mb-4">
+                    {formData.education.map((edu, index) => (
+                        <div key={index} className="mb-6 p-4 bg-pink-50 rounded-2xl">
                             <div className="grid grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm mb-1">Degree</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Degree</label>
                                     <input
                                         type="text"
                                         value={edu.degree}
                                         onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
-                                        className="input input-bordered w-full"
-                                        placeholder="Degree"
+                                        className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm mb-1">University</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">University</label>
                                     <input
                                         type="text"
                                         value={edu.university}
                                         onChange={(e) => handleEducationChange(index, 'university', e.target.value)}
-                                        className="input input-bordered w-full"
-                                        placeholder="University"
+                                        className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm mb-1">Location</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
                                     <input
                                         type="text"
                                         value={edu.location}
                                         onChange={(e) => handleEducationChange(index, 'location', e.target.value)}
-                                        className="input input-bordered w-full"
-                                        placeholder="Location"
+                                        className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
                                     />
                                 </div>
                             </div>
-                            {educations.length > 1 && (
+                            {formData.education.length > 1 && (
                                 <button
                                     type="button"
                                     onClick={() => removeEducation(index)}
-                                    className="btn btn-sm btn-error mt-2"
+                                    className="mt-4 px-4 py-1 rounded-full bg-red-500 text-white text-sm hover:bg-red-600 transition-colors"
                                 >
                                     Remove
                                 </button>
@@ -236,7 +332,12 @@ const EditJobPost = () => {
                     ))}
                 </div>
 
-                <button type="submit" className="btn btn-primary w-full">Save Job Post</button>
+                <button
+                    type="submit"
+                    className="w-full py-3 rounded-full bg-pink-500 text-white font-medium hover:bg-pink-600 transition-colors"
+                >
+                    Save Job Post
+                </button>
             </form>
         </div>
     );

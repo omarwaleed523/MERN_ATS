@@ -1,25 +1,53 @@
 const JobPost = require('../models/JobPost');
 const { runPythonScript } = require('../utils/pythonRunnerJD');
-const fs = require('fs');
+const fs = require('fs').promises;
 const multer = require('multer');
+const path = require('path');
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+fs.mkdir(uploadsDir, { recursive: true }).catch(console.error);
 
 // Multer storage for file uploads
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
+    destination: async function (req, file, cb) {
+        try {
+            await fs.mkdir(uploadsDir, { recursive: true });
+            cb(null, uploadsDir);
+        } catch (error) {
+            cb(error);
+        }
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname);
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + '-' + file.originalname);
     }
 });
-const uploadFile = multer({ storage: storage });
+const uploadFile = multer({
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only PDF and DOCX files are allowed.'));
+        }
+    },
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    }
+});
 
 // Manual creation of a job post (if needed)
 const createJobPost = async (req, res) => {
-    const { jobTitle, skills, experience, education, department, userId } = req.body;
+    const { jobTitle, salary, location, jobDescription, company, skills, experience, education, department, userId } = req.body;
     try {
         const jobPost = new JobPost({
             jobTitle,
+            salary,
+            location,
+            jobDescription,
+            company,
             skills,
             experience,
             education,
@@ -67,11 +95,11 @@ const getJobPostById = async (req, res) => {
 
 const updateJobPost = async (req, res) => {
     const { jobPostId } = req.params;
-    const { jobTitle, skills, experience, education, department, userId } = req.body;
+    const { jobTitle, salary, location, jobDescription, company, skills, experience, education, department, userId } = req.body;
     try {
         const jobPost = await JobPost.findByIdAndUpdate(
             jobPostId,
-            { jobTitle, skills, experience, education, department, userId },
+            { jobTitle, salary, location, jobDescription, company, skills, experience, education, department, userId },
             { new: true }
         );
         if (!jobPost) {
@@ -100,53 +128,56 @@ const deleteJobPost = async (req, res) => {
 
 // New method: Upload a job post file, process JD data via Python, then create a JobPost
 const uploadJobPost = async (req, res) => {
-    const { userId } = req.body;  // Recruiter's ID from frontend
+    if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const { userId } = req.body;
     if (!userId) {
+        await fs.unlink(req.file.path).catch(console.error);
         return res.status(400).json({ message: 'User ID is required' });
     }
+
     const filePath = req.file.path;
+    console.log(`Processing file: ${filePath}`);
+
     try {
         const pythonResponse = await runPythonScript(filePath);
-        if (pythonResponse) {
-            const jobTitle = pythonResponse.JobTitle || "Untitled Job Post";
-            const skills = (pythonResponse.Skills && Array.isArray(pythonResponse.Skills)) ? pythonResponse.Skills : [];
-            const experience = (pythonResponse.Experience && Array.isArray(pythonResponse.Experience))
-                ? pythonResponse.Experience.map(expObj => ({
-                    title: expObj.Title,
-                    company: expObj.Company,
-                    dates: expObj.Dates,
-                    description: expObj.description
-                }))
-                : [];
-            const education = (pythonResponse.Education && Array.isArray(pythonResponse.Education))
-                ? pythonResponse.Education.map(eduObj => ({
-                    degree: eduObj.Degree,
-                    university: eduObj.University,
-                    location: eduObj.Location
-                }))
-                : [];
-            const department = pythonResponse.Department || "";
+        console.log('Python script response:', pythonResponse);
 
-            const jobPost = new JobPost({
-                jobTitle,
-                skills,
-                experience,
-                education,
-                department,
-                userId
-            });
-            await jobPost.save();
-            res.status(201).json({ message: 'Job post created successfully!', jobPost });
-        } else {
-            res.status(500).json({ message: 'Failed to process job post file' });
+        if (!pythonResponse) {
+            throw new Error('Failed to process job post file');
         }
-    } catch (error) {
-        console.error('Error uploading job post:', error);
-        res.status(500).json({ message: 'Failed to create job post.' });
-    } finally {
-        fs.unlink(filePath, (err) => {
-            if (err) console.error('Error deleting file:', err);
+
+        const jobPost = new JobPost({
+            jobTitle: pythonResponse.jobTitle,
+            salary: pythonResponse.salary,
+            location: pythonResponse.location,
+            jobDescription: pythonResponse.jobDescription,
+            company: pythonResponse.company,
+            skills: pythonResponse.skills,
+            experience: pythonResponse.experience || [],
+            education: pythonResponse.education || [],
+            department: pythonResponse.department,
+            userId
         });
+
+        await jobPost.save();
+        res.status(201).json({
+            message: 'Job post created successfully!',
+            jobPost
+        });
+
+    } catch (error) {
+        console.error('Error in uploadJobPost:', error);
+        res.status(500).json({
+            message: 'Failed to create job post',
+            error: error.message
+        });
+
+    } finally {
+        // Clean up the uploaded file
+        await fs.unlink(filePath).catch(console.error);
     }
 };
 

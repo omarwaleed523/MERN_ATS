@@ -11,12 +11,18 @@ const runPythonScript = (filePath) => {
 
         // Use 'python' instead of 'python3' for Windows
         const pythonProcess = spawn('python', [pythonScriptPath, filePath], {
-            stdio: ['pipe', 'pipe', 'ignore'], // Redirect stderr to /dev/null or nul
+            stdio: ['pipe', 'pipe', 'pipe'], // Capture stderr
         });
 
         let dataString = '';
+        let errorString = '';
+
         pythonProcess.stdout.on('data', (data) => {
             dataString += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            errorString += data.toString();
         });
 
         pythonProcess.on('close', (code) => {
@@ -25,9 +31,11 @@ const runPythonScript = (filePath) => {
                     const jsonResponse = JSON.parse(dataString);
                     resolve(jsonResponse);
                 } catch (error) {
+                    console.error('Failed to parse Python script output:', errorString);
                     reject(new Error('Failed to parse Python script output'));
                 }
             } else {
+                console.error('Python script error:', errorString);
                 reject(new Error(`Python script exited with code ${code}`));
             }
         });

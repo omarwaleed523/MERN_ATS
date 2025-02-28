@@ -2,94 +2,93 @@ import React, { useEffect, useState } from 'react';
 import Jobpostcardforcandidate from "../Components/Jobpostcardforcandidate";
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import ResumeCard from '../Components/ResumeCard';
+import { useNavigate } from 'react-router-dom';
 
 const CandidateHome = () => {
     const [jobPosts, setJobPosts] = useState([]);
-    const [resumes, setResumes] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     // Function to fetch job posts from the backend
     const fetchJobPosts = async () => {
         try {
+            setLoading(true);
             const response = await axios.get('http://localhost:5000/api/jobposts');
+            console.log('Job Posts:', response.data);
             setJobPosts(response.data);
+            setError(null);
         } catch (error) {
             console.error('Error fetching job posts:', error);
+            setError('Failed to load job posts. Please try again later.');
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Function to fetch resumes from the backend
-    const fetchResumes = async () => {
-        try {
-            const userId = Cookies.get('userId'); // Retrieve userId from cookies
-            if (!userId) {
-                console.error('User ID not found in cookies');
-                return;
-            }
-
-            const response = await axios.get(`http://localhost:5000/api/resumes?userId=${userId}`);
-            setResumes(response.data);
-        } catch (error) {
-            console.error('Error fetching resumes:', error);
-        }
+    // Function to handle view job details
+    const handleView = (jobPostId) => {
+        navigate(`/viewjobpost/${jobPostId}`);
     };
 
-    // Function to handle application submission
-    const handleApply = async (jobPostId) => {
-        try {
-            const userId = Cookies.get('userId'); // Retrieve userId from cookies
-            if (!userId) {
-                console.error('User ID not found in cookies');
-                return;
-            }
-
-            // Post the application to the backend
-            await axios.post('http://localhost:5000/api/applications/apply', {
-                jobPostId,
-                userId,
-                resumeId: 'your_resume_id_here' // Replace with actual resume ID or logic to get it
-            });
-
-            alert('Application submitted successfully!');
-        } catch (error) {
-            console.error('Error applying for job:', error);
-            alert('Failed to apply for job.');
-        }
-    };
-
-    // Function to handle resume deletion
-    const handleDeleteResume = async (resumeId) => {
-        try {
-            await axios.delete(`http://localhost:5000/api/resumes/${resumeId}`);
-            fetchResumes(); // Fetch resumes again to update the list
-        } catch (error) {
-            console.error('Error deleting resume:', error);
-        }
-    };
-
-    // Fetch job posts and resumes when the component mounts
     useEffect(() => {
         fetchJobPosts();
-        fetchResumes();
     }, []);
 
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <span className="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="alert alert-error shadow-lg max-w-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{error}</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="p-4">
-            <h1 className="text-2xl font-bold mb-4">Avaliable Jobposts</h1>
-            <div>
-                <h2 className="text-xl font-semibold mb-2">Existing Job Posts</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {jobPosts.map((job, index) => (
+        <div className="container mx-auto px-4 py-8">
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-extrabold text-base-content">Available Job Posts</h1>
+                <div className="stats shadow">
+                    <div className="stat">
+                        <div className="stat-title font-extrabold">Total Jobs</div>
+                        <div className="stat-value text-primary">{jobPosts.length}</div>
+                    </div>
+                </div>
+            </div>
+
+            {jobPosts.length === 0 ? (
+                <div className="text-center py-12">
+                    <div className="text-xl text-base-content/70">No job posts available at the moment.</div>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {jobPosts.map((job) => (
                         <Jobpostcardforcandidate
-                            key={index}
-                            title={job.title}
-                            description={job.description}
-                            jobPostId={job._id}
-                            onApply={() => handleApply(job._id)} // Pass the apply handler
+                            key={job._id}
+                            title={job.jobTitle}
+                            description={job.jobDescription}
+                            company={job.company}
+                            location={job.location}
+                            salary={job.salary}
+                            requirements={job.skills.join(', ')}
+                            department={job.department}
+                            onView={() => handleView(job._id)}
                         />
                     ))}
                 </div>
-            </div>
+            )}
         </div>
     );
 };
