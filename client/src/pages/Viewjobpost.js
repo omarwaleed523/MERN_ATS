@@ -1,21 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, isCookie } from 'react-router-dom';
 import axios from 'axios';
-import { FiBriefcase, FiMapPin, FiDollarSign, FiClock, FiCalendar, FiStar, FiAward, FiCheckCircle } from 'react-icons/fi';
+import Cookies from 'js-cookie';
+import { FiBriefcase, FiMapPin, FiDollarSign, FiCalendar, FiStar, FiAward, FiCheckCircle, FiFile, FiMail, FiPhone, FiAlertCircle } from 'react-icons/fi';
 
 const Viewjobpost = () => {
     const [job, setJob] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [resumes, setResumes] = useState([]);
+    const [selectedResumeId, setSelectedResumeId] = useState(null);
+    const [loadingResumes, setLoadingResumes] = useState(false);
+    const [applying, setApplying] = useState(false);
+    const [notification, setNotification] = useState({ show: false, message: '', type: '' });
     const { id } = useParams();
     const navigate = useNavigate();
 
+    // Get current user from cookies
+
+    const userId = Cookies.get('userId') ? Cookies.get('userId') : null;
+    console.log(userId);
+    // Fetch job details
     useEffect(() => {
         const fetchJob = async () => {
             try {
-                console.log('Fetching job details for ID:', id);
                 const response = await axios.get(`http://localhost:5000/api/jobposts/${id}`);
-                console.log('Job details fetched:', response.data);
                 setJob(response.data);
             } catch (err) {
                 console.error('Error fetching job:', err);
@@ -27,6 +37,77 @@ const Viewjobpost = () => {
 
         fetchJob();
     }, [id]);
+
+    // Fetch user's resumes when modal is opened
+    const handleOpenModal = async () => {
+        if (!userId) {
+            setNotification({
+                show: true,
+                message: 'Please log in to apply for jobs',
+                type: 'error'
+            });
+            setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
+            return;
+        }
+
+        setIsModalOpen(true);
+        setLoadingResumes(true);
+
+        try {
+            const response = await axios.get('http://localhost:5000/api/resumes');
+            setResumes(response.data);
+        } catch (error) {
+            console.error('Error fetching resumes:', error);
+        } finally {
+            setLoadingResumes(false);
+        }
+    };
+
+    const handleResumeSelect = (resumeId) => {
+        setSelectedResumeId(resumeId);
+    };
+
+    const handleApply = async () => {
+        if (!selectedResumeId) {
+            setNotification({
+                show: true,
+                message: 'Please select a resume',
+                type: 'error'
+            });
+            setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
+            return;
+        }
+
+        setApplying(true);
+
+        try {
+            await axios.post('http://localhost:5000/api/applications/apply', {
+                userId: userId,
+                resumeId: selectedResumeId,
+                jobPostId: id
+            });
+
+            // Close modal and show success notification
+            setIsModalOpen(false);
+            setNotification({
+                show: true,
+                message: 'Application submitted successfully!',
+                type: 'success'
+            });
+            setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
+        } catch (error) {
+            console.error('Error applying for job:', error);
+            setNotification({
+                show: true,
+                message: 'Failed to submit application. Please try again.',
+                type: 'error'
+            });
+            setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
+        } finally {
+            setApplying(false);
+            setSelectedResumeId(null);
+        }
+    };
 
     const formatSalary = (salary) => {
         return new Intl.NumberFormat('en-US', {
@@ -48,7 +129,7 @@ const Viewjobpost = () => {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="alert alert-error">
-                    <FiCheckCircle className="h-6 w-6" />
+                    <FiAlertCircle className="h-6 w-6" />
                     <span>{error}</span>
                 </div>
             </div>
@@ -57,6 +138,105 @@ const Viewjobpost = () => {
 
     return (
         <div className="min-h-screen bg-base-100 py-8">
+            {/* Notification Toast */}
+            {notification.show && (
+                <div className={`toast toast-top toast-end z-50`}>
+                    <div className={`alert ${notification.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+                        <span>{notification.message}</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Application Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 p-4">
+                    <div className="bg-base-100 rounded-lg shadow-xl max-w-md w-full">
+                        <div className="p-6">
+                            <h3 className="text-xl font-bold mb-4">Apply for {job.jobTitle}</h3>
+                            <p className="text-base-content/70 mb-6">Select a resume to apply with:</p>
+
+                            {loadingResumes ? (
+                                <div className="flex justify-center py-8">
+                                    <span className="loading loading-spinner loading-md text-primary"></span>
+                                </div>
+                            ) : resumes.length === 0 ? (
+                                <div className="text-center py-6 bg-base-200 rounded-lg">
+                                    <FiFile className="mx-auto text-4xl text-base-content/40 mb-2" />
+                                    <p className="text-base-content/70">You don't have any resumes yet.</p>
+                                    <button
+                                        className="btn btn-primary btn-sm mt-4"
+                                        onClick={() => {
+                                            setIsModalOpen(false);
+                                            navigate('/parseresume');
+                                        }}
+                                    >
+                                        Upload Resume
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                                    {resumes.map((resume) => (
+                                        <div
+                                            key={resume._id}
+                                            className={`border rounded-lg p-4 cursor-pointer transition-all hover:border-primary ${selectedResumeId === resume._id ? 'border-primary bg-primary/5' : ''}`}
+                                            onClick={() => handleResumeSelect(resume._id)}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className={`w-6 h-6 rounded-full border ${selectedResumeId === resume._id ? 'border-primary' : 'border-gray-300'} flex items-center justify-center flex-shrink-0 mt-1`}>
+                                                    {selectedResumeId === resume._id && (
+                                                        <div className="w-4 h-4 rounded-full bg-primary"></div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-medium text-base-content">{resume.Name || 'Unnamed Resume'}</h4>
+                                                    <p className="text-sm text-base-content/70 flex items-center gap-1 mt-1">
+                                                        <FiMail className="text-xs" /> {resume.Email}
+                                                    </p>
+                                                    {resume.Skills && resume.Skills.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1 mt-2">
+                                                            {resume.Skills.slice(0, 3).map((skill, idx) => (
+                                                                <span key={idx} className="badge badge-xs badge-outline">{skill}</span>
+                                                            ))}
+                                                            {resume.Skills.length > 3 && (
+                                                                <span className="badge badge-xs">+{resume.Skills.length - 3}</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="bg-base-200 p-4 rounded-b-lg flex justify-end gap-3">
+                            <button
+                                className="btn btn-ghost"
+                                onClick={() => setIsModalOpen(false)}
+                                disabled={applying}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleApply}
+                                disabled={!selectedResumeId || applying || resumes.length === 0}
+                            >
+                                {applying ? (
+                                    <>
+                                        <span className="loading loading-spinner loading-sm"></span>
+                                        Applying...
+                                    </>
+                                ) : (
+                                    'Apply Now'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Hero Section */}
             <div className="bg-base-200 py-12 mb-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -88,7 +268,12 @@ const Viewjobpost = () => {
                             </div>
                         </div>
                         <div className="flex gap-4 w-full md:w-auto">
-                            <button className="btn btn-primary flex-1 md:flex-none">Apply now</button>
+                            <button
+                                className="btn btn-primary flex-1 md:flex-none"
+                                onClick={handleOpenModal}
+                            >
+                                Apply now
+                            </button>
                             <button className="btn btn-outline btn-primary flex-1 md:flex-none">Save Job</button>
                         </div>
                     </div>
@@ -204,7 +389,12 @@ const Viewjobpost = () => {
                             <div className="card-body">
                                 <h3 className="card-title text-2xl mb-4">Quick Apply</h3>
                                 <p className="mb-6">Submit your application now and hear back in 2-3 business days</p>
-                                <button className="btn btn-secondary w-full">Apply Now</button>
+                                <button
+                                    className="btn btn-secondary w-full"
+                                    onClick={handleOpenModal}
+                                >
+                                    Apply Now
+                                </button>
                             </div>
                         </div>
 

@@ -1,5 +1,5 @@
 const express = require('express');
-const { applyForJob, getUserApplications, deleteApplication } = require('../controllers/applicationcontroller');
+const { applyForJob, getUserApplications, deleteApplication, getAllApplications } = require('../controllers/applicationcontroller');
 
 const router = express.Router();
 
@@ -7,7 +7,9 @@ const router = express.Router();
 router.post('/apply', applyForJob);
 
 // Route to get applications for a specific user
-router.get('/', getUserApplications);
+router.get('/:userId', getUserApplications);
+
+router.get('/', getAllApplications);
 
 // Route to delete an application
 router.delete('/:applicationId', deleteApplication);

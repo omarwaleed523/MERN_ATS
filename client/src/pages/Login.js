@@ -42,6 +42,7 @@ const Login = () => {
 
       // Set cookies for user ID, profile image, and token
       Cookies.set('userId', res.data.userId, { expires: 7 });
+
       Cookies.set('profileImage', profileImageUrl, { expires: 7 });
       Cookies.set('role', res.data.role, { expires: 7 }); // Ensure this is set correctly
       Cookies.set('token', res.data.token, { expires: 7 });
@@ -65,9 +66,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md mx-4">
-        <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
+    <div className="min-h-screen flex items-center justify-center bg-base-100">
+      <div className="bg-primary p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md mx-4">
+        <h1 className="text-2xl text-base-100 font-bold mb-6 text-center">Login</h1>
         {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
         <form onSubmit={onSubmit} className="space-y-6">
           <div>
@@ -106,7 +107,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="w-full button flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             {loading ? 'Logging In...' : 'Login'}
           </button>

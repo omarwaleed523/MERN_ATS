@@ -138,7 +138,7 @@ const Resumeparsing = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Upload Section */}
                     <div className="lg:col-span-1">
-                        <div className="bg-base-200 shadow-xl h-full">
+                        <div className="bg-base-200 shadow-xl h-max">
                             <div className="card-body">
                                 <h2 className="card-title text-xl text-base-content mb-6 flex items-center">
                                     <FiUpload className="mr-2 text-primary" /> Upload New Resume

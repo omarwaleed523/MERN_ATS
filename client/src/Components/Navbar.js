@@ -8,7 +8,7 @@ const Navbar = () => {
     const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [currentTheme, setCurrentTheme] = useState(localStorage.getItem('theme') || 'light');
-    const themes = ["light", "dark", "valentine", "cupcake", "bumblebee", "emerald", "corporate", "synthwave", "retro", "cyberpunk"];
+    const themes = ["light", "aqua", "dark", "valentine", "cupcake", "bumblebee", "emerald", "corporate", "synthwave", "retro", "cyberpunk"];
 
     useEffect(() => {
         const profileImage = Cookies.get('profileImage');
@@ -64,8 +64,10 @@ const Navbar = () => {
 
             <div className="navbar-center hidden lg:flex">
                 <ul className="menu menu-horizontal px-1 space-x-2">
-                    {user.role === 'Recruiter' && (
+                    {user.role === 'Recruiter' && (<>
                         <li><Link to='/recruiterhome' className="button">Recruiter Dashboard</Link></li>
+                        <li><Link to='/recruiterapplications' className="button">Recruiter Applications</Link></li>
+                    </>
                     )}
                     {user.role === 'Candidate' && (<>
                         <li><Link to='/candidatehome' className="button">Job Posts</Link></li>

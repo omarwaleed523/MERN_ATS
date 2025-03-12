@@ -10,6 +10,8 @@ const CandidateHome = () => {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
+    Cookies.get('userId');
+
     // Function to fetch job posts from the backend
     const fetchJobPosts = async () => {
         try {
