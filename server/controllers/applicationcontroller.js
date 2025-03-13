@@ -1,10 +1,32 @@
 const Application = require('../models/Application');
+const JobPost = require('../models/JobPost');
+const Resume = require('../models/Resume');
 
 const applyForJob = async (req, res) => {
     const { resumeId, jobPostId, userId } = req.body;
 
     try {
-        const application = new Application({ userId, resumeId, jobPostId });
+        // Fetch the job post to get the job description
+        const jobPost = await JobPost.findById(jobPostId);
+        if (!jobPost) {
+            return res.status(404).json({ message: 'Job post not found.' });
+        }
+
+        // Fetch the resume to get the resume text
+        const resume = await Resume.findById(resumeId);
+        if (!resume) {
+            return res.status(404).json({ message: 'Resume not found.' });
+        }
+
+        // Create the application with the job description and resume text
+        const application = new Application({
+            userId,
+            resumeId,
+            jobPostId,
+            jobDescriptionText: jobPost.jobDescription,
+            resumeText: resume.ResumeText
+        });
+
         await application.save();
         res.status(201).json({ message: 'Application submitted successfully!', application });
     } catch (error) {
@@ -33,7 +55,11 @@ const getUserApplications = async (req, res) => {
 
 const getAllApplications = async (req, res) => {
     try {
-        const applications = await Application.find().populate('jobPostId');
+        const applications = await Application.find()
+            .populate('jobPostId')
+            .populate('resumeId')
+            .populate('userId', 'name email'); // Include user details if needed
+
         res.status(200).json(applications);
     } catch (error) {
         console.error('Error retrieving applications:', error);
@@ -43,7 +69,6 @@ const getAllApplications = async (req, res) => {
 
 // Function to delete an application
 const deleteApplication = async (req, res) => {
-
     const applicationId = req.params.applicationId;
 
     try {

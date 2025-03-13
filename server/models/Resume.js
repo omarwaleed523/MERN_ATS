@@ -21,7 +21,8 @@ const ResumeSchema = new mongoose.Schema({
     Skills: [String],
     Experience: [ExperienceSchema], // Array of embedded documents
     Education: [EducationSchema],   // Array of embedded documents
-    Department: String
+    Department: String,
+    ResumeText: String
 });
 
 module.exports = mongoose.model('Resume', ResumeSchema);

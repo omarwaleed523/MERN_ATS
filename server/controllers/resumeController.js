@@ -33,7 +33,8 @@ const uploadResume = async (req, res) => {
             // Add the user ID to the parsed resume data
             const resumeData = {
                 user: userId,
-                ...pythonResponse
+                ...pythonResponse,
+                ResumeText: pythonResponse.ResumeText || "No resume text extracted"
             };
 
             // Save the parsed resume data to the database

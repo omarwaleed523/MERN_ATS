@@ -27,32 +27,37 @@ Extract the following information from this resume text:
   BUSINESS-DEVELOPMENT, CHEF, CONSTRUCTION, CONSULTANT, DESIGNER, DIGITAL-MEDIA,
   ENGINEERING, FINANCE, FITNESS, HEALTHCARE, HR, INFORMATION-TECHNOLOGY, PUBLIC-RELATIONS,
   SALES, TEACHER.
-  This is the schema for the experience, education, and resume schema. Do not change the schema.:
-  const ExperienceSchema = new mongoose.Schema({
-    Title: String,      
-    Company: String,     
-    Dates: String,       
-    description: String  
+- ResumeText: Include the full text of the resume in a cleaned format.(Required)
+
+This is the schema for the experience, education, and resume schema. Do not change the schema.:
+const ExperienceSchema = new mongoose.Schema({
+  Title: String,      
+  Company: String,     
+  Dates: String,       
+  description: String  
 });
 
 const EducationSchema = new mongoose.Schema({
-    Degree: String,      
-    University: String,  
-    Location: String     
+  Degree: String,      
+  University: String,  
+  Location: String     
 });
 
 const ResumeSchema = new mongoose.Schema({
-    Name: String,
-    Email: String,
-    Phone: String,
-    Skills: [String],
-    Experience: [ExperienceSchema], 
-    Education: [EducationSchema],   
-    Department: String
+  Name: String,
+  Email: String,
+  Phone: String,
+  Skills: [String],
+  Experience: [ExperienceSchema], 
+  Education: [EducationSchema],   
+  Department: String,
+  ResumeText: String
 });
-  Make sure to categorize based on the related skills, education, and experience with one of the 24 departments mentioned.
+
+Make sure to categorize based on the related skills, education, and experience with one of the 24 departments mentioned.
 Ensure you return names, emails, and phone numbers even if they aren't explicitly labeled in the text.
 If missing, use placeholders like 'John Doe', '0123456789', 'example@gmail.com'.
+For the ResumeText field, include the entire content of the resume in a clean, well-formatted text format.
 Return the data in JSON format with these fields as keys.
 """
 
@@ -73,7 +78,7 @@ def extract_text_from_docx(docx_path):
     """Extract text from a DOCX file."""
     try:
         txt = docx2txt.process(docx_path)
-        if txt:
+        if (txt):
             return txt.replace('\t', ' ')  # Replace tabs with spaces
         return None
     except Exception as e:
@@ -94,6 +99,11 @@ def generate_response(extracted_text):
             clean_response_text = matches[0]
             try:
                 json_response = json.loads(clean_response_text)
+                
+                # If ResumeText wasn't provided by the model, add it
+                if 'ResumeText' not in json_response:
+                    json_response['ResumeText'] = extracted_text
+                    
                 return json_response
             except json.JSONDecodeError:
                 print("Error decoding JSON response from the model.", file=sys.stderr)

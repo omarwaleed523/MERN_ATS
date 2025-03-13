@@ -6,7 +6,9 @@ const ApplicationSchema = new mongoose.Schema({
     jobPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'JobPost', required: true },
     status: { type: String, enum: ['Pending', 'Accepted', 'Rejected'], default: 'Pending' },
     similarity: { type: Number, default: 0 },
-    appliedAt: { type: Date, default: Date.now }
+    appliedAt: { type: Date, default: Date.now },
+    jobDescriptionText: { type: String }, // New field to store job description text
+    resumeText: { type: String } // New field to store resume text
 });
 
 module.exports = mongoose.model('Application', ApplicationSchema);
