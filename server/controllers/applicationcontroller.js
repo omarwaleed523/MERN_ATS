@@ -1,6 +1,68 @@
 const Application = require('../models/Application');
 const JobPost = require('../models/JobPost');
 const Resume = require('../models/Resume');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const dotenv = require("dotenv");
+
+dotenv.config();
+
+const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+const generateSimilarityScore = async (jobDesc, resume) => {
+    try {
+        const instruction = `
+      You are an AI recruiter. Compare the job description and resume.
+      Rate similarity between 0 (not relevant) to 100 (perfect fit).
+      
+      Job Description:
+      ${jobDesc}
+
+      Resume:
+      ${resume}
+
+      Return format: "Score: XX"
+    `;
+
+        const response = await model.generateContent(instruction);
+        const textResponse = response.response.text();
+        const match = textResponse.match(/Score:\s*(\d+)/);
+
+        return match ? parseInt(match[1]) : 0;
+    } catch (error) {
+        console.error("❌ Error in Gemini AI:", error);
+        return 0;
+    }
+};
+
+const processMatching = async (req, res) => {
+    try {
+        // Get application IDs from request body or process all applications
+        const { applicationIds } = req.body;
+
+        // Query to find applications to process
+        const query = applicationIds && applicationIds.length > 0
+            ? { _id: { $in: applicationIds } }
+            : {};
+
+        const applications = await Application.find(query);
+
+        for (let app of applications) {
+            if (app.jobDescriptionText && app.resumeText) {
+                const score = await generateSimilarityScore(app.jobDescriptionText, app.resumeText);
+                await Application.updateOne({ _id: app._id }, { $set: { similarity: score } });
+            }
+        }
+
+        res.json({
+            message: "✅ Similarity scores updated!",
+            count: applications.length
+        });
+    } catch (error) {
+        console.error("❌ Error processing matching:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
 
 const applyForJob = async (req, res) => {
     const { resumeId, jobPostId, userId } = req.body;
@@ -83,4 +145,39 @@ const deleteApplication = async (req, res) => {
     }
 };
 
-module.exports = { applyForJob, getUserApplications, deleteApplication, getAllApplications };
+// Function to update application status
+const updateApplicationStatus = async (req, res) => {
+    const { status } = req.body;
+    const applicationId = req.params.applicationId;
+
+    if (!['Pending', 'Accepted', 'Rejected'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status value. Must be Pending, Accepted, or Rejected.' });
+    }
+
+    try {
+        const application = await Application.findById(applicationId);
+
+        if (!application) {
+            return res.status(404).json({ message: 'Application not found.' });
+        }
+
+        // Update the status
+        application.status = status;
+        await application.save();
+
+        // Send email notification - could be implemented in the future
+        // if (status === 'Accepted' || status === 'Rejected') {
+        //     // Send email to candidate
+        // }
+
+        res.status(200).json({
+            message: `Application status updated to ${status}`,
+            application
+        });
+    } catch (error) {
+        console.error('Error updating application status:', error);
+        res.status(500).json({ message: 'Failed to update application status.' });
+    }
+};
+
+module.exports = { applyForJob, getUserApplications, deleteApplication, getAllApplications, processMatching, generateSimilarityScore, updateApplicationStatus };

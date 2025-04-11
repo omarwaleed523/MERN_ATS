@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import { FiSave, FiPlus, FiTrash2, FiBriefcase, FiMapPin, FiDollarSign, FiTag, FiFileText, FiList, FiUser, FiCalendar, FiBookOpen } from 'react-icons/fi';
 
 const VALID_DEPARTMENTS = [
     "ACCOUNTANT", "ADVOCATE", "AGRICULTURE", "APPAREL", "ARTS", "AUTOMOBILE",
@@ -14,6 +15,7 @@ const EditJobPost = () => {
     const { state } = useLocation();
     const { job } = state || {};
     const navigate = useNavigate();
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
         jobTitle: job?.jobTitle || '',
@@ -89,6 +91,8 @@ const EditJobPost = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
+
         try {
             const userId = Cookies.get('userId');
             const skillsArray = formData.skills.split(',').map(item => item.trim()).filter(item => item);
@@ -105,240 +109,382 @@ const EditJobPost = () => {
                 education: formData.education.filter(edu => edu.degree.trim()),
                 userId
             });
+
             navigate('/recruiterhome');
         } catch (error) {
             console.error('Error saving job post:', error);
+            // Show error notification or message
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-8">
-            <h1 className="text-2xl font-bold text-[#9C4C7C] mb-6">Edit Job Post</h1>
-            <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-lg p-6">
-                {/* Job Title */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
-                    <input
-                        type="text"
-                        name="jobTitle"
-                        value={formData.jobTitle}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-full bg-pink-50 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                        required
-                    />
+        <div className="bg-base-100 min-h-screen py-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-primary mb-2 flex items-center">
+                        <FiBriefcase className="mr-3" /> Edit Job Post
+                    </h1>
+                    <p className="text-base-content/60">Update job details and requirements</p>
                 </div>
 
-                {/* Company */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
-                    <input
-                        type="text"
-                        name="company"
-                        value={formData.company}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-full bg-pink-100 text-gray-700 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                        required
-                    />
-                </div>
+                {/* Form Card */}
+                <div className="card bg-base-200 shadow-lg">
+                    <div className="card-body">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Basic Job Info Section */}
+                            <div className="card bg-base-100 shadow-sm">
+                                <div className="card-body">
+                                    <h2 className="card-title text-secondary flex items-center text-lg">
+                                        <FiFileText className="mr-2" /> Basic Job Information
+                                    </h2>
 
-                {/* Location */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                    <input
-                        type="text"
-                        name="location"
-                        value={formData.location}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-full  bg-pink-100 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                        required
-                    />
-                </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {/* Job Title */}
+                                        <div className="form-control w-full">
+                                            <label className="label">
+                                                <span className="label-text flex items-center">
+                                                    <FiBriefcase className="mr-2 text-primary/70" />
+                                                    Job Title
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="jobTitle"
+                                                value={formData.jobTitle}
+                                                onChange={handleInputChange}
+                                                className="input input-bordered w-full focus:input-primary"
+                                                required
+                                                placeholder="e.g. Senior Software Engineer"
+                                            />
+                                        </div>
 
-                {/* Salary */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Salary</label>
-                    <input
-                        type="number"
-                        name="salary"
-                        value={formData.salary}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-full bg-pink-100 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                        required
-                    />
-                </div>
+                                        {/* Company */}
+                                        <div className="form-control w-full">
+                                            <label className="label">
+                                                <span className="label-text flex items-center">
+                                                    <FiUser className="mr-2 text-primary/70" />
+                                                    Company
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="company"
+                                                value={formData.company}
+                                                onChange={handleInputChange}
+                                                className="input input-bordered w-full focus:input-primary"
+                                                required
+                                                placeholder="e.g. Acme Corporation"
+                                            />
+                                        </div>
 
-                {/* Department */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                    <select
-                        name="department"
-                        value={formData.department}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-full bg-pink-100 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                        required
-                    >
-                        <option value="">Select Department</option>
-                        {VALID_DEPARTMENTS.map(dept => (
-                            <option key={dept} value={dept}>{dept.replace(/-/g, ' ')}</option>
-                        ))}
-                    </select>
-                </div>
+                                        {/* Location */}
+                                        <div className="form-control w-full">
+                                            <label className="label">
+                                                <span className="label-text flex items-center">
+                                                    <FiMapPin className="mr-2 text-primary/70" />
+                                                    Location
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="location"
+                                                value={formData.location}
+                                                onChange={handleInputChange}
+                                                className="input input-bordered w-full focus:input-primary"
+                                                required
+                                                placeholder="e.g. New York, NY"
+                                            />
+                                        </div>
 
-                {/* Job Description */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Job Description</label>
-                    <textarea
-                        name="jobDescription"
-                        value={formData.jobDescription}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-2xl bg-pink-100 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                        rows="4"
-                        required
-                    />
-                </div>
+                                        {/* Salary */}
+                                        <div className="form-control w-full">
+                                            <label className="label">
+                                                <span className="label-text flex items-center">
+                                                    <FiDollarSign className="mr-2 text-primary/70" />
+                                                    Salary
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="salary"
+                                                value={formData.salary}
+                                                onChange={handleInputChange}
+                                                className="input input-bordered w-full focus:input-primary"
+                                                required
+                                                placeholder="e.g. 75000"
+                                            />
+                                        </div>
 
-                {/* Skills */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Skills (comma separated)</label>
-                    <input
-                        type="text"
-                        name="skills"
-                        value={formData.skills}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 rounded-full bg-pink-100 border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                        placeholder="e.g., Project management, Communication skills"
-                        required
-                    />
-                </div>
-
-                {/* Experience Section */}
-                <div>
-                    <div className="flex justify-between items-center mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Experience</label>
-                        <button
-                            type="button"
-                            onClick={addExperience}
-                            className="px-4 py-1 rounded-full bg-pink-500 text-white text-sm hover:bg-pink-600 transition-colors"
-                        >
-                            Add Experience
-                        </button>
-                    </div>
-                    {formData.experience.map((exp, index) => (
-                        <div key={index} className="mb-6 p-4 bg-pink-50 rounded-2xl">
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                                    <input
-                                        type="text"
-                                        value={exp.title}
-                                        onChange={(e) => handleExperienceChange(index, 'title', e.target.value)}
-                                        className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
-                                    <input
-                                        type="text"
-                                        value={exp.company}
-                                        onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
-                                        className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                                    />
+                                        {/* Department */}
+                                        <div className="form-control w-full md:col-span-2">
+                                            <label className="label">
+                                                <span className="label-text flex items-center">
+                                                    <FiTag className="mr-2 text-primary/70" />
+                                                    Department
+                                                </span>
+                                            </label>
+                                            <select
+                                                name="department"
+                                                value={formData.department}
+                                                onChange={handleInputChange}
+                                                className="select select-bordered w-full focus:select-primary"
+                                                required
+                                            >
+                                                <option value="">Select Department</option>
+                                                {VALID_DEPARTMENTS.map(dept => (
+                                                    <option key={dept} value={dept}>
+                                                        {dept.replace(/-/g, ' ')}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Dates</label>
-                                <input
-                                    type="text"
-                                    value={exp.dates}
-                                    onChange={(e) => handleExperienceChange(index, 'dates', e.target.value)}
-                                    className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                                />
+
+                            {/* Job Description Section */}
+                            <div className="card bg-base-100 shadow-sm">
+                                <div className="card-body">
+                                    <h2 className="card-title text-secondary flex items-center text-lg">
+                                        <FiFileText className="mr-2" /> Job Description
+                                    </h2>
+
+                                    {/* Job Description */}
+                                    <div className="form-control w-full">
+                                        <label className="label">
+                                            <span className="label-text">Detailed Job Description</span>
+                                        </label>
+                                        <textarea
+                                            name="jobDescription"
+                                            value={formData.jobDescription}
+                                            onChange={handleInputChange}
+                                            className="textarea textarea-bordered h-40 focus:textarea-primary"
+                                            required
+                                            placeholder="Describe the role, responsibilities, benefits, etc."
+                                        />
+                                    </div>
+
+                                    {/* Skills */}
+                                    <div className="form-control w-full mt-4">
+                                        <label className="label">
+                                            <span className="label-text flex items-center">
+                                                <FiList className="mr-2 text-primary/70" />
+                                                Skills (comma separated)
+                                            </span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="skills"
+                                            value={formData.skills}
+                                            onChange={handleInputChange}
+                                            className="input input-bordered w-full focus:input-primary"
+                                            placeholder="e.g. React.js, Node.js, MongoDB"
+                                            required
+                                        />
+                                        <label className="label">
+                                            <span className="label-text-alt text-base-content/60">
+                                                List all required skills separated by commas
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                                <textarea
-                                    value={exp.description}
-                                    onChange={(e) => handleExperienceChange(index, 'description', e.target.value)}
-                                    className="w-full px-4 py-2 rounded-2xl bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                                    rows="3"
-                                />
+
+                            {/* Experience Section */}
+                            <div className="card bg-base-100 shadow-sm">
+                                <div className="card-body">
+                                    <div className="flex justify-between items-center">
+                                        <h2 className="card-title text-secondary flex items-center text-lg">
+                                            <FiCalendar className="mr-2" /> Required Experience
+                                        </h2>
+                                        <button
+                                            type="button"
+                                            onClick={addExperience}
+                                            className="btn btn-sm btn-primary gap-2"
+                                        >
+                                            <FiPlus size={16} /> Add Experience
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-6 mt-4">
+                                        {formData.experience.map((exp, index) => (
+                                            <div key={index} className="card bg-base-200 shadow-sm">
+                                                <div className="card-body">
+                                                    <div className="flex justify-between items-start">
+                                                        <h3 className="font-medium">Experience #{index + 1}</h3>
+                                                        {formData.experience.length > 1 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeExperience(index)}
+                                                                className="btn btn-sm btn-outline btn-error btn-square"
+                                                            >
+                                                                <FiTrash2 size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div className="form-control w-full">
+                                                            <label className="label">
+                                                                <span className="label-text">Title</span>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={exp.title}
+                                                                onChange={(e) => handleExperienceChange(index, 'title', e.target.value)}
+                                                                className="input input-bordered w-full focus:input-primary"
+                                                                placeholder="e.g. Software Developer"
+                                                            />
+                                                        </div>
+                                                        <div className="form-control w-full">
+                                                            <label className="label">
+                                                                <span className="label-text">Company</span>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={exp.company}
+                                                                onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
+                                                                className="input input-bordered w-full focus:input-primary"
+                                                                placeholder="e.g. ABC Company"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="form-control w-full">
+                                                        <label className="label">
+                                                            <span className="label-text">Dates</span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={exp.dates}
+                                                            onChange={(e) => handleExperienceChange(index, 'dates', e.target.value)}
+                                                            className="input input-bordered w-full focus:input-primary"
+                                                            placeholder="e.g. 2020-2022 or 2+ years"
+                                                        />
+                                                    </div>
+
+                                                    <div className="form-control w-full">
+                                                        <label className="label">
+                                                            <span className="label-text">Description</span>
+                                                        </label>
+                                                        <textarea
+                                                            value={exp.description}
+                                                            onChange={(e) => handleExperienceChange(index, 'description', e.target.value)}
+                                                            className="textarea textarea-bordered w-full focus:textarea-primary"
+                                                            rows="3"
+                                                            placeholder="Describe the required experience"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                            {formData.experience.length > 1 && (
+
+                            {/* Education Section */}
+                            <div className="card bg-base-100 shadow-sm">
+                                <div className="card-body">
+                                    <div className="flex justify-between items-center">
+                                        <h2 className="card-title text-secondary flex items-center text-lg">
+                                            <FiBookOpen className="mr-2" /> Required Education
+                                        </h2>
+                                        <button
+                                            type="button"
+                                            onClick={addEducation}
+                                            className="btn btn-sm btn-primary gap-2"
+                                        >
+                                            <FiPlus size={16} /> Add Education
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-6 mt-4">
+                                        {formData.education.map((edu, index) => (
+                                            <div key={index} className="card bg-base-200 shadow-sm">
+                                                <div className="card-body">
+                                                    <div className="flex justify-between items-start">
+                                                        <h3 className="font-medium">Education #{index + 1}</h3>
+                                                        {formData.education.length > 1 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeEducation(index)}
+                                                                className="btn btn-sm btn-outline btn-error btn-square"
+                                                            >
+                                                                <FiTrash2 size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                        <div className="form-control w-full">
+                                                            <label className="label">
+                                                                <span className="label-text">Degree</span>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={edu.degree}
+                                                                onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
+                                                                className="input input-bordered w-full focus:input-primary"
+                                                                placeholder="e.g. Bachelor's in Computer Science"
+                                                            />
+                                                        </div>
+                                                        <div className="form-control w-full">
+                                                            <label className="label">
+                                                                <span className="label-text">University</span>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={edu.university}
+                                                                onChange={(e) => handleEducationChange(index, 'university', e.target.value)}
+                                                                className="input input-bordered w-full focus:input-primary"
+                                                                placeholder="e.g. State University"
+                                                            />
+                                                        </div>
+                                                        <div className="form-control w-full">
+                                                            <label className="label">
+                                                                <span className="label-text">Location</span>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={edu.location}
+                                                                onChange={(e) => handleEducationChange(index, 'location', e.target.value)}
+                                                                className="input input-bordered w-full focus:input-primary"
+                                                                placeholder="e.g. New York, NY"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Submit Button */}
+                            <div className="flex justify-end pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => removeExperience(index)}
-                                    className="mt-4 px-4 py-1 rounded-full bg-red-500 text-white text-sm hover:bg-red-600 transition-colors"
+                                    onClick={() => navigate('/recruiterhome')}
+                                    className="btn btn-outline btn-neutral mr-3"
                                 >
-                                    Remove
+                                    Cancel
                                 </button>
-                            )}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Education Section */}
-                <div>
-                    <div className="flex justify-between items-center mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Education</label>
-                        <button
-                            type="button"
-                            onClick={addEducation}
-                            className="px-4 py-1 rounded-full bg-pink-500 text-white text-sm hover:bg-pink-600 transition-colors"
-                        >
-                            Add Education
-                        </button>
-                    </div>
-                    {formData.education.map((edu, index) => (
-                        <div key={index} className="mb-6 p-4 bg-pink-50 rounded-2xl">
-                            <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Degree</label>
-                                    <input
-                                        type="text"
-                                        value={edu.degree}
-                                        onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
-                                        className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">University</label>
-                                    <input
-                                        type="text"
-                                        value={edu.university}
-                                        onChange={(e) => handleEducationChange(index, 'university', e.target.value)}
-                                        className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                                    <input
-                                        type="text"
-                                        value={edu.location}
-                                        onChange={(e) => handleEducationChange(index, 'location', e.target.value)}
-                                        className="w-full px-4 py-2 rounded-full bg-white border-transparent focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                                    />
-                                </div>
-                            </div>
-                            {formData.education.length > 1 && (
                                 <button
-                                    type="button"
-                                    onClick={() => removeEducation(index)}
-                                    className="mt-4 px-4 py-1 rounded-full bg-red-500 text-white text-sm hover:bg-red-600 transition-colors"
+                                    type="submit"
+                                    className={`btn btn-primary gap-2 ${isSubmitting ? 'loading' : ''}`}
+                                    disabled={isSubmitting}
                                 >
-                                    Remove
+                                    {!isSubmitting && <FiSave size={18} />}
+                                    {isSubmitting ? 'Saving...' : 'Save Job Post'}
                                 </button>
-                            )}
-                        </div>
-                    ))}
+                            </div>
+                        </form>
+                    </div>
                 </div>
-
-                <button
-                    type="submit"
-                    className="w-full py-3 rounded-full bg-pink-500 text-white font-medium hover:bg-pink-600 transition-colors"
-                >
-                    Save Job Post
-                </button>
-            </form>
+            </div>
         </div>
     );
 };

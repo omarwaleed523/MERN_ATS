@@ -83,6 +83,7 @@ const Viewjobpost = () => {
         try {
             await axios.post('http://localhost:5000/api/applications/apply', {
                 userId: userId,
+                recruiterId: job.userId, // Add the recruiter ID from the job posting
                 resumeId: selectedResumeId,
                 jobPostId: id
             });

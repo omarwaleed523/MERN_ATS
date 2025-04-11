@@ -4,9 +4,9 @@
     line-height: normal;
     font-weight: 700;
     margin-bottom: 0.5em;
-  }
-  
-  .small-desc {
+}
+
+.small-desc {
     font-size: 1em;
     font-weight: 400;
     line-height: 1.5em;
@@ -17,9 +17,57 @@
     -webkit-line-clamp: 5;
     -webkit-box-orient: vertical;
     margin-bottom: 3em;
-  }
-  
-  .go-corner {
+}
+
+/* Enhanced card animations and effects */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(var(--p), 0.2); }
+    70% { box-shadow: 0 0 0 10px rgba(var(--p), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--p), 0); }
+}
+
+/* Apply animations to card elements */
+.rounded-lg {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Card hover effects */
+.rounded-lg:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Badge hover effects */
+.badge-primary:hover {
+    animation: pulseGlow 1.5s infinite;
+}
+
+/* Decorative pattern for cards */
+.card-pattern {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    opacity: 0.02;
+    pointer-events: none;
+    background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+    background-size: 15px 15px;
+}
+
+/* Card container grid layout with improved spacing */
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    padding: 24px;
+}
+
+.go-corner {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -31,68 +79,28 @@
     right: 0;
     background: oklch(var(--n));
     border-radius: 0 4px 0 32px;
-  }
-  
-  .go-arrow {
+    transition: all 0.3s ease;
+}
+
+.go-corner:hover {
+    width: 2.5em;
+    height: 2.5em;
+    background: oklch(var(--p));
+}
+
+.go-arrow {
     margin-top: -4px;
     margin-right: -4px;
     color: white;
     font-family: courier, sans;
-  }
-  
-  .card {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    position: relative;
-    max-width: 300px;
-    max-height: 320px;
-    background-color: #F7B5CA;
-    border-radius: 10px;
-    padding: 1em;
-    margin: 12px;
-    text-decoration: none;
-    z-index: 0;
-    overflow: hidden;
-    font-family: Arial, Helvetica, sans-serif;
-    transition: background-color 0.3s ease;
-  }
-  
-  .card:hover {
-    background-color: oklch(var(--n));
-  }
-  
-  .card:before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    top: -16px;
-    right: -16px;
-    background: oklch(var(--p));
-    height: 32px;
-    width: 32px;
-    border-radius: 32px;
-    transform: scale(1);
-    transform-origin: 50% 50%;
-    transition: transform 0.35s ease-out;
-  }
-  
-  .card:hover:before {
-    transform: scale(28);
-    background: oklch(var(--n));
-  }
-  
-  .card:hover .small-desc {
-    transition: all 0.5s ease-out;
-    color: rgba(255, 255, 255, 0.8);
-  }
-  
-  .card:hover .card-title {
-    transition: all 0.5s ease-out;
-    color: #ffffff;
-  }
-  
-  .button-container {
+    transition: transform 0.3s ease;
+}
+
+.rounded-lg:hover .go-arrow {
+    transform: rotate(45deg);
+}
+
+.button-container {
     display: flex;
     justify-content: space-between;
     position: absolute;
@@ -141,4 +149,45 @@
 .button-edit:active {
     transform: translate(0);
     box-shadow: none;
+}
+
+/* Skeleton loading animations for cards */
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+.skeleton-card {
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.2) 50%, 
+        rgba(255, 255, 255, 0.1) 100%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 8px;
+}
+
+/* Visual indicator for new job postings */
+.new-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: oklch(var(--su));
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    animation: pulse 1.5s infinite;
+    z-index: 10;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
