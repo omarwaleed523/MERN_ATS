@@ -26,7 +26,12 @@ const Navbar = () => {
         setCurrentTheme(savedTheme);
 
         if (userId && token) {
-            setUser({ profileImage, role, userId, name, token });
+            // Format profile image URL if it doesn't start with http
+            const formattedProfileImage = profileImage && !profileImage.startsWith('http') 
+                ? `http://localhost:5000${profileImage}` 
+                : profileImage;
+                
+            setUser({ profileImage: formattedProfileImage, role, userId, name, token });
             setIsLoggedIn(true);
             // Reset profile image error state when user context changes
             setProfileImageError(false);
