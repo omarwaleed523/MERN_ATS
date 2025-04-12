@@ -2,11 +2,22 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { UserContext } from '../context/UserContext';
-import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-import { Pie, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
+import { Pie, Bar, Line } from 'react-chartjs-2';
 
 // Register ChartJS components
-ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(
+  ArcElement, 
+  CategoryScale, 
+  LinearScale, 
+  BarElement, 
+  PointElement, 
+  LineElement,
+  Title, 
+  Tooltip, 
+  Legend,
+  Filler
+);
 
 const AdminDashboard = () => {
   const { user } = useContext(UserContext);
@@ -17,6 +28,13 @@ const AdminDashboard = () => {
     adminCount: 0,
     jobPostsCount: 0,
     applicationsCount: 0
+  });
+  const [skillStats, setSkillStats] = useState([]);
+  const [companyStats, setCompanyStats] = useState([]);
+  const [activityData, setActivityData] = useState({
+    labels: [],
+    applications: [],
+    jobs: []
   });
   const [recentUsers, setRecentUsers] = useState([]);
   const [recentJobs, setRecentJobs] = useState([]);
@@ -49,9 +67,38 @@ const AdminDashboard = () => {
           headers: { 'x-auth-token': user.token }
         });
 
+        // Fetch top skills across resumes (new endpoint to be created)
+        const skillsResponse = await axios.get('http://localhost:5000/api/admin/top-skills', {
+          headers: { 'x-auth-token': user.token }
+        }).catch(() => ({ data: [] }));
+        
+        // Fetch company stats (new endpoint to be created)
+        const companiesResponse = await axios.get('http://localhost:5000/api/admin/company-stats', {
+          headers: { 'x-auth-token': user.token }
+        }).catch(() => ({ data: [] }));
+        
+        // Fetch system activity over time (new endpoint to be created)
+        const activityResponse = await axios.get('http://localhost:5000/api/admin/activity-timeline', {
+          headers: { 'x-auth-token': user.token }
+        }).catch(() => ({ 
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            applications: [5, 7, 10, 12, 15, 18],
+            jobs: [2, 3, 5, 7, 8, 10]
+          }
+        }));
+
         setStats(statsResponse.data);
         setRecentUsers(usersResponse.data);
         setRecentJobs(jobsResponse.data);
+        setSkillStats(skillsResponse.data || []);
+        setCompanyStats(companiesResponse.data || []);
+        setActivityData(activityResponse.data || {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          applications: [5, 7, 10, 12, 15, 18],
+          jobs: [2, 3, 5, 7, 8, 10]
+        });
+        
         setLoading(false);
       } catch (err) {
         console.error('Error fetching admin dashboard data:', err);
@@ -76,34 +123,55 @@ const AdminDashboard = () => {
     ],
   };
 
-  // Application status distribution
-  const applicationStatusData = {
-    labels: ['Pending', 'Reviewing', 'Shortlisted', 'Rejected', 'Hired'],
+  // Top Skills chart data
+  const skillsData = {
+    labels: skillStats.map(item => item.skill).slice(0, 7),
     datasets: [
       {
-        label: 'Applications by Status',
-        data: [
-          stats.pendingApplications || 0,
-          stats.reviewingApplications || 0,
-          stats.shortlistedApplications || 0,
-          stats.rejectedApplications || 0,
-          stats.hiredApplications || 0,
-        ],
-        backgroundColor: [
-          'rgba(255, 206, 86, 0.6)',
-          'rgba(54, 162, 235, 0.6)',
-          'rgba(75, 192, 192, 0.6)',
-          'rgba(255, 99, 132, 0.6)',
-          'rgba(153, 102, 255, 0.6)',
-        ],
-        borderColor: [
-          'rgba(255, 206, 86, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 99, 132, 1)',
-          'rgba(153, 102, 255, 1)',
-        ],
+        label: 'Number of Candidates',
+        data: skillStats.map(item => item.count).slice(0, 7),
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 1,
+      },
+    ],
+  };
+
+  // Company Activity chart data
+  const companyData = {
+    labels: companyStats.map(item => item.company).slice(0, 5),
+    datasets: [
+      {
+        label: 'Job Postings',
+        data: companyStats.map(item => item.jobCount).slice(0, 5),
+        backgroundColor: 'rgba(255, 159, 64, 0.6)',
+        borderColor: 'rgba(255, 159, 64, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // System activity over time (line chart)
+  const activityChartData = {
+    labels: activityData.labels,
+    datasets: [
+      {
+        label: 'Applications',
+        data: activityData.applications,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: 'Job Postings',
+        data: activityData.jobs,
+        borderColor: 'rgba(153, 102, 255, 1)',
+        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
       },
     ],
   };
@@ -132,7 +200,7 @@ const AdminDashboard = () => {
       ) : (
         <>
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="stats shadow bg-primary text-primary-content">
               <div className="stat">
                 <div className="stat-title">Total Users</div>
@@ -151,9 +219,15 @@ const AdminDashboard = () => {
                 <div className="stat-value">{stats.applicationsCount}</div>
               </div>
             </div>
+            <div className="stats shadow bg-info text-info-content">
+              <div className="stat">
+                <div className="stat-title">Resumes</div>
+                <div className="stat-value">{stats.resumesCount || 0}</div>
+              </div>
+            </div>
           </div>
 
-          {/* Charts Section */}
+          {/* Charts Section - First Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <div className="bg-base-200 p-6 rounded-lg shadow">
               <h2 className="text-xl font-semibold mb-4">User Distribution</h2>
@@ -162,10 +236,10 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="bg-base-200 p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Application Status</h2>
+              <h2 className="text-xl font-semibold mb-4">Top Skills in Demand</h2>
               <div className="h-[300px] flex items-center justify-center">
                 <Bar 
-                  data={applicationStatusData} 
+                  data={skillsData} 
                   options={{ 
                     maintainAspectRatio: false,
                     scales: {
@@ -173,6 +247,48 @@ const AdminDashboard = () => {
                         beginAtZero: true,
                         ticks: {
                           precision: 0 // Only show integer values
+                        }
+                      }
+                    }
+                  }} 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Charts Section - Second Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="bg-base-200 p-6 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-4">Most Active Companies</h2>
+              <div className="h-[300px] flex items-center justify-center">
+                <Bar 
+                  data={companyData} 
+                  options={{ 
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          precision: 0
+                        }
+                      }
+                    }
+                  }} 
+                />
+              </div>
+            </div>
+            <div className="bg-base-200 p-6 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-4">System Activity</h2>
+              <div className="h-[300px] flex items-center justify-center">
+                <Line 
+                  data={activityChartData} 
+                  options={{ 
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          precision: 0
                         }
                       }
                     }
@@ -247,7 +363,7 @@ const AdminDashboard = () => {
                   <tr>
                     <th>Job Title</th>
                     <th>Company</th>
-                    <th>Status</th>
+                    <th>Department</th>
                     <th>Posted</th>
                   </tr>
                 </thead>
@@ -257,15 +373,11 @@ const AdminDashboard = () => {
                       <td>{job.jobTitle}</td>
                       <td>{job.company}</td>
                       <td>
-                        <span className={`badge ${
-                          job.status === 'open' 
-                            ? 'badge-success' 
-                            : 'badge-error'
-                        }`}>
-                          {job.status}
+                        <span className="badge badge-ghost">
+                          {job.department}
                         </span>
                       </td>
-                      <td>{new Date(job.postDate).toLocaleDateString()}</td>
+                      <td>{new Date(job.createdAt || job.postDate).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>

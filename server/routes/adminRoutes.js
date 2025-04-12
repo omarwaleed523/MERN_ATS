@@ -15,6 +15,11 @@ router.get('/stats', adminController.getSystemStats);
 router.get('/recent-users', adminController.getRecentUsers);
 router.get('/recent-jobs', adminController.getRecentJobs);
 
+// New analytics endpoints
+router.get('/top-skills', adminController.getTopSkills);
+router.get('/company-stats', adminController.getCompanyStats);
+router.get('/activity-timeline', adminController.getActivityTimeline);
+
 // User management
 router.get('/users', adminController.getAllUsers);
 router.put('/users/:userId', adminController.updateUser);

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import JobpostCard from '../Components/JobpostCard';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { FiPlus, FiBriefcase, FiUsers, FiSearch, FiFilter, FiRefreshCw, FiClock, FiCheckCircle, FiTrendingUp, FiCalendar } from 'react-icons/fi';
+import { FiPlus, FiBriefcase, FiUsers, FiSearch, FiFilter, FiRefreshCw, FiCheckCircle, FiTrendingUp, FiCalendar } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
 const RecruiterHome = () => {

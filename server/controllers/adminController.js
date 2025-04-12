@@ -19,12 +19,13 @@ exports.getSystemStats = async (req, res) => {
     // Count applications
     const applicationsCount = await Application.countDocuments();
     
+    // Count resumes (new)
+    const resumesCount = await Resume.countDocuments();
+    
     // Count applications by status
-    const pendingApplications = await Application.countDocuments({ status: 'pending' });
-    const reviewingApplications = await Application.countDocuments({ status: 'reviewing' });
-    const shortlistedApplications = await Application.countDocuments({ status: 'shortlisted' });
-    const rejectedApplications = await Application.countDocuments({ status: 'rejected' });
-    const hiredApplications = await Application.countDocuments({ status: 'hired' });
+    const pendingApplications = await Application.countDocuments({ status: 'Pending' });
+    const acceptedApplications = await Application.countDocuments({ status: 'Accepted' });
+    const rejectedApplications = await Application.countDocuments({ status: 'Rejected' });
 
     res.json({
       totalUsers,
@@ -33,11 +34,10 @@ exports.getSystemStats = async (req, res) => {
       adminCount,
       jobPostsCount,
       applicationsCount,
+      resumesCount,
       pendingApplications,
-      reviewingApplications,
-      shortlistedApplications,
-      rejectedApplications,
-      hiredApplications
+      acceptedApplications,
+      rejectedApplications
     });
   } catch (error) {
     console.error('Error getting system stats:', error);
@@ -204,3 +204,155 @@ function extractSchemaFields(schema) {
   
   return fields;
 }
+
+// Get top skills across resumes
+exports.getTopSkills = async (req, res) => {
+  try {
+    const Resume = require('../models/Resume');
+    
+    // Aggregate to extract and count skills across all resumes
+    const topSkills = await Resume.aggregate([
+      // Unwind the Skills array to create a document for each skill
+      { $unwind: "$Skills" },
+      // Group by skill and count occurrences
+      { $group: { 
+        _id: "$Skills", 
+        count: { $sum: 1 } 
+      }},
+      // Sort by count in descending order
+      { $sort: { count: -1 } },
+      // Limit to top 10 skills
+      { $limit: 10 },
+      // Reshape for output
+      { $project: {
+        _id: 0,
+        skill: "$_id",
+        count: 1
+      }}
+    ]);
+    
+    res.json(topSkills);
+  } catch (error) {
+    console.error('Error getting top skills:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get company statistics
+exports.getCompanyStats = async (req, res) => {
+  try {
+    const Jobpost = require('../models/Jobpost');
+    const User = require('../models/User');
+    
+    // Get companies with job post counts
+    const companiesWithJobCounts = await Jobpost.aggregate([
+      { $group: { 
+        _id: "$company", 
+        jobCount: { $sum: 1 },
+        // Calculate average salary offered
+        avgSalary: { $avg: "$salary" }
+      }},
+      { $sort: { jobCount: -1 } },
+      { $limit: 10 },
+      { $project: {
+        _id: 0,
+        company: "$_id",
+        jobCount: 1,
+        avgSalary: 1
+      }}
+    ]);
+    
+    // Get recruiter counts per company
+    const recruitersByCompany = await User.aggregate([
+      { $match: { role: "Recruiter" } },
+      { $group: { 
+        _id: "$company", 
+        recruiterCount: { $sum: 1 } 
+      }},
+      { $project: {
+        _id: 0,
+        company: "$_id",
+        recruiterCount: 1
+      }}
+    ]);
+    
+    // Merge job counts with recruiter counts
+    const companyStats = companiesWithJobCounts.map(company => {
+      const recruiterData = recruitersByCompany.find(r => r.company === company.company) || { recruiterCount: 0 };
+      return {
+        ...company,
+        recruiterCount: recruiterData.recruiterCount
+      };
+    });
+    
+    res.json(companyStats);
+  } catch (error) {
+    console.error('Error getting company stats:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get system activity timeline
+exports.getActivityTimeline = async (req, res) => {
+  try {
+    const Application = require('../models/Application');
+    const Jobpost = require('../models/Jobpost');
+    const User = require('../models/User');
+    
+    // Get the last 6 months
+    const months = [];
+    const monthLabels = [];
+    const currentDate = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(currentDate);
+      d.setMonth(d.getMonth() - i);
+      const month = d.getMonth();
+      const year = d.getFullYear();
+      
+      // Start of month
+      const startDate = new Date(year, month, 1);
+      // End of month
+      const endDate = new Date(year, month + 1, 0);
+      
+      months.push({ startDate, endDate });
+      monthLabels.push(startDate.toLocaleDateString('en-US', { month: 'short' }));
+    }
+    
+    // Initialize data arrays
+    const applicationCounts = [];
+    const jobCounts = [];
+    const userCounts = [];
+    
+    // Get counts for each month
+    for (const { startDate, endDate } of months) {
+      // Applications created in this month
+      const applicationCount = await Application.countDocuments({
+        appliedAt: { $gte: startDate, $lte: endDate }
+      });
+      applicationCounts.push(applicationCount);
+      
+      // Job posts created in this month
+      const jobCount = await Jobpost.countDocuments({
+        createdAt: { $gte: startDate, $lte: endDate }
+      });
+      jobCounts.push(jobCount);
+      
+      // Users registered in this month
+      const userCount = await User.countDocuments({
+        createdAt: { $gte: startDate, $lte: endDate }
+      });
+      userCounts.push(userCount);
+    }
+    
+    res.json({
+      labels: monthLabels,
+      applications: applicationCounts,
+      jobs: jobCounts,
+      users: userCounts
+    });
+  } catch (error) {
+    console.error('Error getting activity timeline:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
