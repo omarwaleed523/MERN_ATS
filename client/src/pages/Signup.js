@@ -260,6 +260,7 @@ const Signup = () => {
             >
               <option value="Recruiter">Recruiter</option>
               <option value="Candidate">Candidate</option>
+              <option value="Administrator">Administrator</option>
             </select>
             {fieldErrors.role && <p className="text-red-500 text-sm mt-1">{fieldErrors.role}</p>}
           </div>

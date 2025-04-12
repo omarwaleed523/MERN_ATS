@@ -6,22 +6,26 @@ const JWT_SECRET = process.env.JWT_SECRET || 'MERN_ATS_secure_key_2024';
 
 /**
  * Authentication middleware
- * Verifies the JWT token in the Authorization header
+ * Verifies the JWT token in the Authorization header or x-auth-token header
  * Sets the authenticated user in the request object
  */
 const auth = async (req, res, next) => {
   try {
-    // Get token from header
+    // Get token from header - check both Authorization and x-auth-token headers
+    let token;
     const authHeader = req.headers.authorization;
+    const xAuthToken = req.headers['x-auth-token'];
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } else if (xAuthToken) {
+      token = xAuthToken;
+    } else {
       return res.status(401).json({ 
         success: false, 
         message: 'Access denied. No valid token provided.' 
       });
     }
-    
-    const token = authHeader.split(' ')[1];
     
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET);

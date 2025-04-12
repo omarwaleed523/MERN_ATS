@@ -133,6 +133,13 @@ const Navbar = () => {
                                     <li><Link to={`/applications/${Cookies.get('userId')}`} className="button">Applications</Link></li>
                                 </>
                             )}
+                            {user.role === 'Administrator' && (
+                                <>
+                                    <li><Link to='/admin/dashboard' className="button">Admin Dashboard</Link></li>
+                                    <li><Link to='/admin/users' className="button">Manage Users</Link></li>
+                                    <li><Link to='/admin/insights' className="button">System Insights</Link></li>
+                                </>
+                            )}
                         </ul>
                     )}
                 </div>
@@ -152,6 +159,13 @@ const Navbar = () => {
                             <li><Link to='/candidatehome' className="button">Job Posts</Link></li>
                             <li><Link to='/parseresume' className="button">Parse Resume</Link></li>
                             <li><Link to={`/applications/${Cookies.get('userId')}`} className="button">Applications</Link></li>
+                        </>
+                    )}
+                    {user.role === 'Administrator' && (
+                        <>
+                            <li><Link to='/admin/dashboard' className="button">Admin Dashboard</Link></li>
+                            <li><Link to='/admin/users' className="button">Manage Users</Link></li>
+                            <li><Link to='/admin/insights' className="button">System Insights</Link></li>
                         </>
                     )}
                 </ul>

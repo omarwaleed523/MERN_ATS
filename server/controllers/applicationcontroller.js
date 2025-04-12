@@ -1,5 +1,5 @@
 const Application = require('../models/Application');
-const JobPost = require('../models/JobPost');
+const JobPost = require('../models/Jobpost');
 const Resume = require('../models/Resume');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const dotenv = require("dotenv");

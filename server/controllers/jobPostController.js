@@ -1,4 +1,4 @@
-const JobPost = require('../models/JobPost');
+const Jobpost = require('../models/Jobpost');
 const { runPythonScript } = require('../utils/pythonRunnerJD');
 const fs = require('fs').promises;
 const multer = require('multer');
@@ -42,7 +42,7 @@ const uploadFile = multer({
 const createJobPost = async (req, res) => {
     const { jobTitle, salary, location, jobDescription, company, skills, experience, education, department, userId } = req.body;
     try {
-        const jobPost = new JobPost({
+        const jobPost = new Jobpost({
             jobTitle,
             salary,
             location,
@@ -68,9 +68,9 @@ const getAllJobPosts = async (req, res) => {
         const { userId } = req.query;
         let jobPosts = [];
         if (userId) {
-            jobPosts = await JobPost.find({ userId }).populate('userId', 'name email company');
+            jobPosts = await Jobpost.find({ userId }).populate('userId', 'name email company');
         } else {
-            jobPosts = await JobPost.find().populate('userId', 'name email company');
+            jobPosts = await Jobpost.find().populate('userId', 'name email company');
         }
         res.status(200).json(jobPosts);
     } catch (error) {
@@ -82,7 +82,7 @@ const getAllJobPosts = async (req, res) => {
 const getJobPostById = async (req, res) => {
     const { jobPostId } = req.params;
     try {
-        const jobPost = await JobPost.findById(jobPostId).populate('userId', 'name email company');
+        const jobPost = await Jobpost.findById(jobPostId).populate('userId', 'name email company');
         if (!jobPost) {
             return res.status(404).json({ message: 'Job post not found.' });
         }
@@ -97,7 +97,7 @@ const updateJobPost = async (req, res) => {
     const { jobPostId } = req.params;
     const { jobTitle, salary, location, jobDescription, company, skills, experience, education, department, userId } = req.body;
     try {
-        const jobPost = await JobPost.findByIdAndUpdate(
+        const jobPost = await Jobpost.findByIdAndUpdate(
             jobPostId,
             { jobTitle, salary, location, jobDescription, company, skills, experience, education, department, userId },
             { new: true }
@@ -115,7 +115,7 @@ const updateJobPost = async (req, res) => {
 const deleteJobPost = async (req, res) => {
     const { jobPostId } = req.params;
     try {
-        const jobPost = await JobPost.findByIdAndDelete(jobPostId);
+        const jobPost = await Jobpost.findByIdAndDelete(jobPostId);
         if (!jobPost) {
             return res.status(404).json({ message: 'Job post not found.' });
         }
@@ -149,7 +149,7 @@ const uploadJobPost = async (req, res) => {
             throw new Error('Failed to process job post file');
         }
 
-        const jobPost = new JobPost({
+        const jobPost = new Jobpost({
             jobTitle: pythonResponse.jobTitle,
             salary: pythonResponse.salary,
             location: pythonResponse.location,

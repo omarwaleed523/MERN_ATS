@@ -16,6 +16,9 @@ import UploadJobPost from './pages/UploadJobPost';
 import Viewjobpost from './pages/Viewjobpost';
 import RecruiterApplication from './pages/RecruiterApplication';
 import ManageProfile from './pages/ManageProfile';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminUserManagement from './pages/AdminUserManagement';
+import AdminDatabaseSchemas from './pages/AdminDatabaseSchemas';
 
 const App = () => (
   <>
@@ -36,6 +39,11 @@ const App = () => (
           <Route path="/viewjobpost/:id" element={<Viewjobpost />} />
           <Route path='/recruiterapplications' element={<RecruiterApplication />} />
           <Route path='/manageprofile' element={<ManageProfile />} />
+          
+          {/* Admin Routes */}
+          <Route path='/admin/dashboard' element={<AdminDashboard />} />
+          <Route path='/admin/users' element={<AdminUserManagement />} />
+          <Route path='/admin/schemas' element={<AdminDatabaseSchemas />} />
         </Routes>
       </Router>
     </UserProvider>
