@@ -1,7 +1,7 @@
 import React from 'react';
-import { FiBriefcase, FiMapPin, FiDollarSign, FiArrowRight, FiCalendar, FiStar } from 'react-icons/fi';
+import { FiBriefcase, FiMapPin, FiDollarSign, FiArrowRight, FiCalendar, FiStar, FiUser, FiMail } from 'react-icons/fi';
 
-const Jobpostcardforcandidate = ({ title, description, company, location, salary, requirements, department, createdAt, onView }) => {
+const Jobpostcardforcandidate = ({ title, description, company, location, salary, requirements, department, createdAt, recruiter, onView }) => {
     // Format salary to include commas and dollar sign
     const formatSalary = (salary) => {
         return new Intl.NumberFormat('en-US', {
@@ -72,6 +72,26 @@ const Jobpostcardforcandidate = ({ title, description, company, location, salary
                         <div className="flex items-center gap-2">
                             <FiMapPin className="h-5 w-5 text-primary" />
                             <span className="text-base-content/70">{location}</span>
+                        </div>
+                    )}
+                    
+                    {/* Add recruiter info section */}
+                    {recruiter && recruiter.name && (
+                        <div className="flex items-center gap-2">
+                            <FiUser className="h-5 w-5 text-primary" />
+                            <span className="text-base-content/70">{recruiter.name}</span>
+                            {recruiter.company && (
+                                <span className="badge badge-ghost badge-sm ml-1">{recruiter.company}</span>
+                            )}
+                        </div>
+                    )}
+                    
+                    {recruiter && recruiter.email && (
+                        <div className="flex items-center gap-2">
+                            <FiMail className="h-5 w-5 text-primary" />
+                            <a href={`mailto:${recruiter.email}`} className="text-base-content/70 hover:text-primary transition-colors">
+                                {recruiter.email}
+                            </a>
                         </div>
                     )}
                 </div>

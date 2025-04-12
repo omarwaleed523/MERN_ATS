@@ -346,6 +346,7 @@ const CandidateHome = () => {
                                             requirements={job.skills.join(', ')}
                                             department={job.department}
                                             createdAt={job.createdAt}
+                                            recruiter={job.userId} // Add recruiter information
                                             onView={() => handleView(job._id)}
                                         />
                                     ))}
@@ -372,6 +373,7 @@ const CandidateHome = () => {
                                         requirements={job.skills.join(', ')}
                                         department={job.department}
                                         createdAt={job.createdAt}
+                                        recruiter={job.userId} // Pass the recruiter information
                                         onView={() => handleView(job._id)}
                                     />
                                 ))}

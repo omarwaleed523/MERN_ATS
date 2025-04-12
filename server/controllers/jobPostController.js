@@ -68,9 +68,9 @@ const getAllJobPosts = async (req, res) => {
         const { userId } = req.query;
         let jobPosts = [];
         if (userId) {
-            jobPosts = await JobPost.find({ userId });
+            jobPosts = await JobPost.find({ userId }).populate('userId', 'name email company');
         } else {
-            jobPosts = await JobPost.find();
+            jobPosts = await JobPost.find().populate('userId', 'name email company');
         }
         res.status(200).json(jobPosts);
     } catch (error) {
@@ -82,7 +82,7 @@ const getAllJobPosts = async (req, res) => {
 const getJobPostById = async (req, res) => {
     const { jobPostId } = req.params;
     try {
-        const jobPost = await JobPost.findById(jobPostId);
+        const jobPost = await JobPost.findById(jobPostId).populate('userId', 'name email company');
         if (!jobPost) {
             return res.status(404).json({ message: 'Job post not found.' });
         }

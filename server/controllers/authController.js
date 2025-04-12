@@ -29,7 +29,7 @@ const generateToken = (user) => {
  * @route POST /api/auth/register
  */
 const register = async (req, res) => {
-  const { name, email, password, phonenumber, role } = req.body;
+  const { name, email, password, phonenumber, role, company } = req.body;
   
   try {
     // Check if user already exists
@@ -47,7 +47,8 @@ const register = async (req, res) => {
       email,
       password,
       phonenumber,
-      role: role || 'Candidate' // Default to Candidate if no role provided
+      role: role || 'Candidate', // Default to Candidate if no role provided
+      company: role === 'Recruiter' ? company : undefined // Only set company for recruiters
     });
     
     // Handle profile picture if provided
@@ -74,6 +75,7 @@ const register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        company: user.company,
         token
       }
     });
@@ -131,6 +133,7 @@ const login = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      company: user.company,
       profileImage,
       token
     });
@@ -183,7 +186,7 @@ const getUserProfile = async (req, res) => {
  * @route PUT /api/auth/user/:id
  */
 const updateUserProfile = async (req, res) => {
-  const { name, email, phonenumber } = req.body;
+  const { name, email, phonenumber, company } = req.body;
   
   try {
     // Check if user is updating their own profile
@@ -218,6 +221,8 @@ const updateUserProfile = async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = email;
     if (phonenumber) user.phonenumber = phonenumber;
+    // Only update company field for recruiters
+    if (company && user.role === 'Recruiter') user.company = company;
     
     // Save updated user
     await user.save();
@@ -232,6 +237,7 @@ const updateUserProfile = async (req, res) => {
         email: user.email,
         phonenumber: user.phonenumber,
         role: user.role,
+        company: user.company,
         profilepicture: user.profilepicture
       }
     });

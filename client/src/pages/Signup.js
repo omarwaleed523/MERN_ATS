@@ -9,6 +9,7 @@ const Signup = () => {
     password: '',
     phonenumber: '',
     role: 'Candidate',
+    company: '',
     profilepicture: null,
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -19,7 +20,7 @@ const Signup = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const navigate = useNavigate();
 
-  const { name, email, password, phonenumber, role } = formData;
+  const { name, email, password, phonenumber, role, company } = formData;
 
   // Handle input changes
   const onChange = (e) => {
@@ -114,6 +115,17 @@ const Signup = () => {
     data.append('password', password);
     data.append('phonenumber', phonenumber);
     data.append('role', role);
+    
+    // Add company data for recruiter role
+    if (role === 'Recruiter') {
+      if (!company.trim()) {
+        setFieldErrors({ ...fieldErrors, company: 'Company is required for recruiters.' });
+        setLoading(false);
+        return;
+      }
+      data.append('company', company);
+    }
+    
     if (formData.profilepicture) {
       data.append('profilepicture', formData.profilepicture);
     }
@@ -251,6 +263,24 @@ const Signup = () => {
             </select>
             {fieldErrors.role && <p className="text-red-500 text-sm mt-1">{fieldErrors.role}</p>}
           </div>
+
+          {/* Company Field - only shown when Recruiter is selected */}
+          {role === 'Recruiter' && (
+            <div>
+              <label htmlFor="company" className="block text-sm font-medium text-gray-700">Company</label>
+              <input
+                type="text"
+                name="company"
+                value={company}
+                onChange={onChange}
+                placeholder="Enter your company name"
+                className={`mt-1 block w-full px-4 py-2 border ${fieldErrors.company ? 'border-red-500' : 'border-gray-300'
+                  } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                required={role === 'Recruiter'}
+              />
+              {fieldErrors.company && <p className="text-red-500 text-sm mt-1">{fieldErrors.company}</p>}
+            </div>
+          )}
 
           {/* Profile Picture Field */}
           <div>

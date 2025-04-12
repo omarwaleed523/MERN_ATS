@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, isCookie } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { FiBriefcase, FiMapPin, FiDollarSign, FiCalendar, FiStar, FiAward, FiCheckCircle, FiFile, FiMail, FiPhone, FiAlertCircle } from 'react-icons/fi';
+import { FiBriefcase, FiMapPin, FiDollarSign, FiCalendar, FiStar, FiAward, FiCheckCircle, FiFile, FiMail, FiPhone, FiAlertCircle, FiUser } from 'react-icons/fi';
 
 const Viewjobpost = () => {
     const [job, setJob] = useState(null);
@@ -360,6 +360,28 @@ const Viewjobpost = () => {
                             <div className="card-body">
                                 <h2 className="card-title text-2xl text-base-content mb-4">About {job?.company}</h2>
                                 <div className="space-y-4">
+                                    {/* Recruiter Information */}
+                                    <div className="flex items-center gap-3">
+                                        <FiUser className="text-primary" />
+                                        <div>
+                                            <p className="text-sm text-base-content/60">Posted by</p>
+                                            <p className="text-base-content">{job?.userId?.name || 'Unknown Recruiter'}</p>
+                                            {job?.userId?.company && (
+                                                <span className="badge badge-outline mt-1">{job.userId.company}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {job?.userId?.email && (
+                                        <div className="flex items-center gap-3">
+                                            <FiMail className="text-primary" />
+                                            <div>
+                                                <p className="text-sm text-base-content/60">Contact</p>
+                                                <a href={`mailto:${job.userId.email}`} className="text-base-content hover:text-primary transition-colors">
+                                                    {job.userId.email}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-3">
                                         <FiCalendar className="text-primary" />
                                         <div>
