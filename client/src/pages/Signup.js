@@ -28,7 +28,8 @@ const Signup = () => {
 
     // Clear field errors when the user types
     setFieldErrors({ ...fieldErrors, [name]: '' });
-
+    setError('');
+    
     // Validate email format
     if (name === 'email') {
       if (!/\S+@\S+\.\S+/.test(value)) {
@@ -118,15 +119,26 @@ const Signup = () => {
     }
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', data, {
+      const response = await axios.post('http://localhost:5000/api/auth/register', data, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      alert(res.data.msg); // Show success message
-      navigate('/login'); // Redirect to login page
+      
+      if (response.data.success) {
+        // Show success message to user
+        alert('Registration successful! Please log in.'); 
+        navigate('/login'); // Redirect to login page
+      } else {
+        setError(response.data.message || 'Registration failed. Please try again.');
+      }
     } catch (err) {
-      setError(err.response?.data?.msg || 'Something went wrong. Please try again.');
+      console.error('Registration error:', err);
+      setError(
+        err.response?.data?.message || 
+        err.response?.data?.msg || 
+        'Something went wrong. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -135,7 +147,7 @@ const Signup = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-100">
       <div className="bg-primary p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md mx-4">
-        <h1 className="text-2xl font-bold mb-6 text-center">Sign Up</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center text-base-100">Sign Up</h1>
         {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
         <form onSubmit={onSubmit} className="space-y-6">
           {/* Name Field */}
@@ -204,7 +216,7 @@ const Signup = () => {
                 ></div>
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                Password Strength: {['Weak', 'Fair', 'Good', 'Strong', 'Very Strong'][passwordStrength] || 'very strong'}
+                Password Strength: {['Very Weak', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'][passwordStrength] || 'Very Weak'}
               </p>
             </div>
             {fieldErrors.password && <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>}

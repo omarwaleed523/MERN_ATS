@@ -15,6 +15,7 @@ import EditJobPost from './pages/EditJobPost';
 import UploadJobPost from './pages/UploadJobPost';
 import Viewjobpost from './pages/Viewjobpost';
 import RecruiterApplication from './pages/RecruiterApplication';
+import ManageProfile from './pages/ManageProfile';
 
 const App = () => (
   <>
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/addjobpost" element={<UploadJobPost />} />
           <Route path="/viewjobpost/:id" element={<Viewjobpost />} />
           <Route path='/recruiterapplications' element={<RecruiterApplication />} />
+          <Route path='/manageprofile' element={<ManageProfile />} />
         </Routes>
       </Router>
     </UserProvider>

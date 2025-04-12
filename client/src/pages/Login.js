@@ -1,4 +1,4 @@
-import React, { useState, useContext, Profiler } from 'react';
+import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
@@ -27,6 +27,7 @@ const Login = () => {
     setLoading(true);
     setError('');
 
+    // Basic email validation
     if (!/\S+@\S+\.\S+/.test(email)) {
       setError('Please enter a valid email address.');
       setLoading(false);
@@ -34,32 +35,56 @@ const Login = () => {
     }
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
-      console.log(res.data); // Log the response to verify profileImage
+      const response = await axios.post('http://localhost:5000/api/auth/login', formData);
+      
+      // Check if login was successful
+      if (!response.data.success) {
+        setError(response.data.message || 'Login failed. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      // Extract user data from response
+      const { userId, role, token, name, profileImage } = response.data;
+      
+      // Make sure profileImage is a full URL
+      const profileImageUrl = profileImage
+        ? profileImage.startsWith('http') 
+          ? profileImage 
+          : `http://localhost:5000${profileImage}`
+        : null;
 
-      // Construct the full URL for the profile image
-      const profileImageUrl = `http://localhost:5000${res.data.profileImage}`;
+      // Set cookies for user data (7 day expiry)
+      Cookies.set('userId', userId, { expires: 7 });
+      Cookies.set('name', name || '', { expires: 7 });
+      Cookies.set('profileImage', profileImageUrl || '', { expires: 7 });
+      Cookies.set('role', role, { expires: 7 });
+      Cookies.set('token', token, { expires: 7 });
+      
+      // Update user context
+      setUser({
+        userId,
+        name: name || '',
+        profileImage: profileImageUrl,
+        role,
+        token
+      });
 
-      // Set cookies for user ID, profile image, and token
-      Cookies.set('userId', res.data.userId, { expires: 7 });
-
-      Cookies.set('profileImage', profileImageUrl, { expires: 7 });
-      Cookies.set('role', res.data.role, { expires: 7 }); // Ensure this is set correctly
-      Cookies.set('token', res.data.token, { expires: 7 });
-      // Set user profile image and role in context
-      console.log(profileImageUrl)
-      setUser({ profileImage: profileImageUrl, role: res.data.role });
-
-      // Navigate to the appropriate home page
-      if (res.data.role === 'Recruiter') {
+      // Navigate based on role
+      if (role === 'Recruiter') {
         navigate('/recruiterhome');
-      } else if (res.data.role === 'Candidate') {
+      } else if (role === 'Candidate') {
         navigate('/candidatehome');
       } else {
         navigate('/');
       }
     } catch (err) {
-      setError(err.response?.data?.msg || 'Invalid email or password.');
+      console.error('Login error:', err);
+      setError(
+        err.response?.data?.message || 
+        err.response?.data?.msg || 
+        'Login failed. Please check your credentials.'
+      );
     } finally {
       setLoading(false);
     }
