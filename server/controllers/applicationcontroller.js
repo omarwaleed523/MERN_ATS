@@ -1,5 +1,5 @@
 const Application = require('../models/Application');
-const JobPost = require('../models/Jobpost');
+const Jobpost = require('../models/Jobpost');
 const Resume = require('../models/Resume');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const dotenv = require("dotenv");
@@ -69,7 +69,7 @@ const applyForJob = async (req, res) => {
 
     try {
         // Fetch the job post to get the job description
-        const jobPost = await JobPost.findById(jobPostId);
+        const jobPost = await Jobpost.findById(jobPostId);
         if (!jobPost) {
             return res.status(404).json({ message: 'Job post not found.' });
         }

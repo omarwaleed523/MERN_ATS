@@ -137,7 +137,6 @@ const Navbar = () => {
                                 <>
                                     <li><Link to='/admin/dashboard' className="button">Admin Dashboard</Link></li>
                                     <li><Link to='/admin/users' className="button">Manage Users</Link></li>
-                                    <li><Link to='/admin/insights' className="button">System Insights</Link></li>
                                 </>
                             )}
                         </ul>
@@ -165,7 +164,6 @@ const Navbar = () => {
                         <>
                             <li><Link to='/admin/dashboard' className="button">Admin Dashboard</Link></li>
                             <li><Link to='/admin/users' className="button">Manage Users</Link></li>
-                            <li><Link to='/admin/insights' className="button">System Insights</Link></li>
                         </>
                     )}
                 </ul>

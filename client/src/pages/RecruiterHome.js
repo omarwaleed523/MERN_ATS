@@ -25,28 +25,93 @@ const RecruiterHome = () => {
         try {
             setLoading(true);
             const userId = Cookies.get('userId');
-            const response = await axios.get(`http://localhost:5000/api/jobposts?userId=${userId}`);
-            setJobPosts(response.data);
-
-            // Get all applications
-            const applicationsResponse = await axios.get('http://localhost:5000/api/applications/');
-
-            // Filter applications to only include those for jobs created by this recruiter
-            const filteredApplications = applicationsResponse.data.filter(app =>
-                response.data.some(job => job._id === app.jobPostId?._id)
-            );
-
-            // Calculate stats
-            setStats({
-                totalJobs: response.data.length,
-                activeJobs: response.data.filter(job => !job.isClosed).length,
-                totalApplications: filteredApplications.length,
-                recentApplicants: filteredApplications.filter(app =>
-                    new Date(app.appliedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                ).length
-            });
+            
+            // Fetch job posts created by this recruiter
+            const jobResponse = await axios.get(`http://localhost:5000/api/jobposts?userId=${userId}`);
+            
+            if (!jobResponse.data || !Array.isArray(jobResponse.data)) {
+                console.error('Invalid job posts data:', jobResponse.data);
+                setJobPosts([]);
+                setStats({
+                    totalJobs: 0,
+                    activeJobs: 0,
+                    totalApplications: 0,
+                    recentApplicants: 0
+                });
+                setLoading(false);
+                return;
+            }
+            
+            setJobPosts(jobResponse.data);
+            
+            // Create array of job IDs for filtering applications
+            const jobIds = jobResponse.data.map(job => job._id);
+            
+            try {
+                // Get all applications - this will be filtered on the client side
+                // We should create a server endpoint to filter by jobIds in the future for better performance
+                const applicationsResponse = await axios.get('http://localhost:5000/api/applications/');
+                
+                if (applicationsResponse.data && Array.isArray(applicationsResponse.data)) {
+                    // Filter applications to only include those for jobs created by this recruiter
+                    const recruiterApplications = applicationsResponse.data.filter(app => {
+                        // Check if jobPostId exists and is an object with _id property
+                        if (app.jobPostId && typeof app.jobPostId === 'object' && app.jobPostId._id) {
+                            return jobIds.includes(app.jobPostId._id);
+                        } 
+                        // If jobPostId is just an ID string
+                        else if (typeof app.jobPostId === 'string') {
+                            return jobIds.includes(app.jobPostId);
+                        }
+                        return false;
+                    });
+                    
+                    // Calculate recent applicants (last 7 days)
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    
+                    const recentApps = recruiterApplications.filter(app => {
+                        const appDate = new Date(app.appliedAt || app.createdAt || Date.now());
+                        return appDate >= sevenDaysAgo;
+                    });
+                    
+                    // Calculate stats
+                    setStats({
+                        totalJobs: jobResponse.data.length,
+                        activeJobs: jobResponse.data.filter(job => !job.isClosed).length,
+                        totalApplications: recruiterApplications.length,
+                        recentApplicants: recentApps.length
+                    });
+                } else {
+                    console.error('Invalid applications data:', applicationsResponse.data);
+                    // Set stats with just job data
+                    setStats({
+                        totalJobs: jobResponse.data.length,
+                        activeJobs: jobResponse.data.filter(job => !job.isClosed).length,
+                        totalApplications: 0,
+                        recentApplicants: 0
+                    });
+                }
+            } catch (appError) {
+                console.error('Error fetching applications:', appError);
+                // Set stats with just job data if applications fetch fails
+                setStats({
+                    totalJobs: jobResponse.data.length,
+                    activeJobs: jobResponse.data.filter(job => !job.isClosed).length,
+                    totalApplications: 0,
+                    recentApplicants: 0
+                });
+            }
+            
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error('Error fetching job posts:', error);
+            setJobPosts([]);
+            setStats({
+                totalJobs: 0,
+                activeJobs: 0,
+                totalApplications: 0,
+                recentApplicants: 0
+            });
         } finally {
             setLoading(false);
         }
