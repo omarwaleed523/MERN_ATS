@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FiUsers, FiBriefcase, FiShield } from 'react-icons/fi';
+import AnimatedBackground from '../Components/AnimatedBackground';
+import AuthForm, { 
+  TextField, 
+  PasswordField, 
+  SelectField, 
+  FileField,
+  PasswordStrengthMeter,
+  FormIcons 
+} from '../Components/AuthForm';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -18,6 +29,7 @@ const Signup = () => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [emailError, setEmailError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [selectedFileName, setSelectedFileName] = useState('');
   const navigate = useNavigate();
 
   const { name, email, password, phonenumber, role, company } = formData;
@@ -49,7 +61,10 @@ const Signup = () => {
 
   // Handle file upload
   const onFileChange = (e) => {
-    setFormData({ ...formData, profilepicture: e.target.files[0] });
+    if (e.target.files[0]) {
+      setFormData({ ...formData, profilepicture: e.target.files[0] });
+      setSelectedFileName(e.target.files[0].name);
+    }
   };
 
   // Calculate password strength (capped at 5)
@@ -63,15 +78,6 @@ const Signup = () => {
 
     // Cap the strength at 5
     return Math.min(strength, 5);
-  };
-
-  // Get password strength color
-  const getPasswordStrengthColor = () => {
-    if (passwordStrength === 0) return 'gray';
-    if (passwordStrength <= 2) return 'red';
-    if (passwordStrength === 3) return 'orange';
-    if (passwordStrength === 4) return 'yellow';
-    if (passwordStrength === 5) return 'green';
   };
 
   // Handle form submission
@@ -156,153 +162,176 @@ const Signup = () => {
     }
   };
 
+  // Define form fields
+  const fields = (
+    <>
+      <TextField 
+        label="Name"
+        icon={FormIcons.user}
+        type="text"
+        name="name"
+        value={name}
+        onChange={onChange}
+        placeholder="Enter your name"
+        required
+      />
+
+      <TextField 
+        label="Email"
+        icon={FormIcons.email}
+        type="email"
+        name="email"
+        value={email}
+        onChange={onChange}
+        placeholder="Enter your email"
+        required
+        error={emailError}
+      />
+
+      <div className="space-y-1">
+        <PasswordField
+          showPassword={showPassword}
+          toggleShowPassword={() => setShowPassword(!showPassword)}
+          name="password"
+          value={password}
+          onChange={onChange}
+          placeholder="Enter your password"
+          required
+        />
+        <PasswordStrengthMeter strength={passwordStrength} />
+      </div>
+
+      <TextField 
+        label="Phone Number"
+        icon={FormIcons.phone}
+        type="tel"
+        name="phonenumber"
+        value={phonenumber}
+        onChange={onChange}
+        placeholder="Enter your phone number"
+      />
+
+      <SelectField
+        label="Role"
+        icon={FormIcons.user}
+        name="role"
+        value={role}
+        onChange={onChange}
+        required
+      >
+        <option value="Recruiter">Recruiter</option>
+        <option value="Candidate">Candidate</option>
+        <option value="Administrator">Administrator</option>
+      </SelectField>
+
+      {role === 'Recruiter' && (
+        <TextField 
+          label="Company"
+          icon={FormIcons.company}
+          type="text"
+          name="company"
+          value={company}
+          onChange={onChange}
+          placeholder="Enter your company name"
+          required={role === 'Recruiter'}
+          error={fieldErrors.company}
+        />
+      )}
+
+      <FileField
+        label="Profile Picture"
+        name="profilepicture"
+        onChange={onFileChange}
+        fileName={selectedFileName}
+      />
+    </>
+  );
+
+  // Helper component to display role information
+  const RoleInfo = ({ icon, title, description, iconBgClass }) => (
+    <div className="flex items-start gap-4 mb-4">
+      <div className={`h-10 w-10 rounded-full ${iconBgClass} flex items-center justify-center mt-1 flex-shrink-0`}>
+        {icon}
+      </div>
+      <div>
+        <h3 className="font-semibold mb-1">{title}</h3>
+        <p className="opacity-70 text-sm">{description}</p>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-100">
-      <div className="bg-primary p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md mx-4">
-        <h1 className="text-2xl font-bold mb-6 text-center text-base-100">Sign Up</h1>
-        {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
-        <form onSubmit={onSubmit} className="space-y-6">
-          {/* Name Field */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
-            <input
-              type="text"
-              name="name"
-              value={name}
-              onChange={onChange}
-              placeholder="Enter your name"
-              className={`mt-1 block w-full px-4 py-2 border ${fieldErrors.name ? 'border-red-500' : 'border-gray-300'
-                } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-              required
-            />
-            {fieldErrors.name && <p className="text-red-500 text-sm mt-1">{fieldErrors.name}</p>}
-          </div>
-
-          {/* Email Field */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={email}
-              onChange={onChange}
-              placeholder="Enter your email"
-              className={`mt-1 block w-full px-4 py-2 border ${emailError || fieldErrors.email ? 'border-red-500' : 'border-gray-300'
-                } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-              required
-            />
-            {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
-            {fieldErrors.email && <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>}
-          </div>
-
-          {/* Password Field */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={password}
-                onChange={onChange}
-                placeholder="Enter your password"
-                className={`mt-1 block w-full px-4 py-2 border ${fieldErrors.password ? 'border-red-500' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
-              >
-                {showPassword ? 'Hide' : 'Show'}
-              </button>
-            </div>
-            <div className="mt-2">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="h-2 rounded-full"
-                  style={{
-                    width: `${(passwordStrength / 5) * 100}%`,
-                    backgroundColor: getPasswordStrengthColor(),
-                  }}
-                ></div>
-              </div>
-              <p className="text-sm text-gray-600 mt-1">
-                Password Strength: {['Very Weak', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'][passwordStrength] || 'Very Weak'}
-              </p>
-            </div>
-            {fieldErrors.password && <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>}
-          </div>
-
-          {/* Phone Number Field */}
-          <div>
-            <label htmlFor="phonenumber" className="block text-sm font-medium text-gray-700">Phone Number</label>
-            <input
-              type="number"
-              name="phonenumber"
-              value={phonenumber}
-              onChange={onChange}
-              placeholder="Enter your phone number"
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-
-          {/* Role Field */}
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
-            <select
-              name="role"
-              value={role}
-              onChange={onChange}
-              className={`mt-1 block w-full px-4 py-2 border ${fieldErrors.role ? 'border-red-500' : 'border-gray-300'
-                } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-              required
-            >
-              <option value="Recruiter">Recruiter</option>
-              <option value="Candidate">Candidate</option>
-              <option value="Administrator">Administrator</option>
-            </select>
-            {fieldErrors.role && <p className="text-red-500 text-sm mt-1">{fieldErrors.role}</p>}
-          </div>
-
-          {/* Company Field - only shown when Recruiter is selected */}
-          {role === 'Recruiter' && (
-            <div>
-              <label htmlFor="company" className="block text-sm font-medium text-gray-700">Company</label>
-              <input
-                type="text"
-                name="company"
-                value={company}
-                onChange={onChange}
-                placeholder="Enter your company name"
-                className={`mt-1 block w-full px-4 py-2 border ${fieldErrors.company ? 'border-red-500' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                required={role === 'Recruiter'}
-              />
-              {fieldErrors.company && <p className="text-red-500 text-sm mt-1">{fieldErrors.company}</p>}
-            </div>
-          )}
-
-          {/* Profile Picture Field */}
-          <div>
-            <label htmlFor="profilepicture" className="block text-sm font-medium text-gray-700">Profile Picture</label>
-            <input
-              type="file"
-              name="profilepicture"
-              onChange={onFileChange}
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+    <div className="min-h-screen bg-base-100 pt-16"> {/* Added pt-16 to create space for navbar */}
+      {/* The navbar is now above this page content, rendered from App.js */}
+      <AnimatedBackground />
+      
+      {/* Background pattern */}
+      <div className="absolute inset-0 top-16 bg-gradient-to-br from-primary-content/5 to-secondary-content/5 z-0">
+        <div className="absolute inset-0" style={{ 
+          backgroundImage: 'radial-gradient(circle, var(--p) 1px, transparent 1px)', 
+          backgroundSize: '30px 30px',
+          opacity: 0.1
+        }}></div>
+      </div>
+      
+      {/* Main Content - Added flex and items-center to vertically center the content */}
+      <div className="container mx-auto px-6 py-8 relative z-10 flex items-center min-h-[calc(100vh-4rem)]">
+        <div className="flex flex-col md:flex-row items-center gap-10 justify-center w-full">
+          {/* Left Section - Welcome Copy */}
+          <motion.div 
+            className="md:w-1/2 max-w-md"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            {loading ? 'Signing Up...' : 'Sign Up'}
-          </button>
-        </form>
+            <h2 className="text-4xl font-bold mb-6 text-base-content">
+              Create Your <span className="text-primary">Account</span>
+            </h2>
+            <p className="text-lg opacity-80 mb-6">
+              Join our platform and discover the perfect match for your career goals or find the ideal candidates for your team.
+            </p>
+            
+            <div className="space-y-4 bg-base-200 p-6 rounded-xl">
+              <h3 className="font-bold mb-2">Choose Your Role:</h3>
+              <RoleInfo 
+                icon={<FiUsers className="h-5 w-5 text-primary" />}
+                iconBgClass="bg-primary/10"
+                title="Candidate"
+                description="Create a profile, upload your resume, and apply to jobs that match your skills and experience."
+              />
+              <RoleInfo 
+                icon={<FiBriefcase className="h-5 w-5 text-secondary" />}
+                iconBgClass="bg-secondary/10"
+                title="Recruiter"
+                description="Post job openings, review applications, and find the perfect candidates for your positions."
+              />
+              <RoleInfo 
+                icon={<FiShield className="h-5 w-5 text-accent" />}
+                iconBgClass="bg-accent/10"
+                title="Administrator"
+                description="Manage the platform, users, and settings with full administrative privileges."
+              />
+            </div>
+          </motion.div>
+
+          {/* Right Section - Signup Form */}
+          <div className="md:w-1/2 max-w-md w-full py-8 -mt-[5px]">
+            <AuthForm
+              title="Sign Up"
+              onSubmit={onSubmit}
+              loading={loading}
+              error={error}
+              fields={fields}
+            >
+              <div className="text-sm text-base-content/70">
+                Already have an account?{' '}
+                <Link to="/login" className="text-primary hover:underline font-medium">
+                  Login
+                </Link>
+              </div>
+            </AuthForm>
+          </div>
+        </div>
       </div>
     </div>
   );
