@@ -37,7 +37,7 @@ const AuthForm = ({
 }) => {
   return (
     <div className="relative z-10 w-full max-w-md mx-auto">
-``      {error && (
+      {error && (
         <motion.div 
           className="alert alert-error mb-4 z-20"
           variants={itemVariants}
