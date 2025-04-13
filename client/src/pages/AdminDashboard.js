@@ -176,6 +176,63 @@ const AdminDashboard = () => {
     ],
   };
 
+  // Chart options with improved visibility for dark theme
+  const chartOptions = {
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          precision: 0,
+          color: 'rgba(255, 255, 255, 0.8)' // Lighter color for y-axis labels
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)' // Subtle grid lines
+        }
+      },
+      x: {
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.8)' // Lighter color for x-axis labels
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)' // Subtle grid lines
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        labels: {
+          color: 'rgba(255, 255, 255, 0.8)' // Lighter color for legend labels
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        titleColor: 'white',
+        bodyColor: 'white',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1
+      }
+    }
+  };
+
+  // Pie chart options
+  const pieOptions = {
+    ...chartOptions,
+    plugins: {
+      ...chartOptions.plugins,
+      legend: {
+        position: 'right',
+        labels: {
+          color: 'rgba(255, 255, 255, 0.8)',
+          padding: 20,
+          font: {
+            size: 12
+          }
+        }
+      }
+    }
+  };
+
   if (error) {
     return (
       <div className="min-h-screen bg-base-100 p-6">
@@ -190,38 +247,38 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-100 p-4 md:p-6">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+    <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6">
+      <h1 className="text-3xl font-bold mb-6 text-white">Admin Dashboard</h1>
       
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <span className="loading loading-spinner loading-lg"></span>
+          <span className="loading loading-spinner loading-lg text-primary"></span>
         </div>
       ) : (
         <>
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="stats shadow bg-primary text-primary-content">
+            <div className="stats shadow bg-indigo-800 text-white">
               <div className="stat">
-                <div className="stat-title">Total Users</div>
+                <div className="stat-title text-indigo-200">Total Users</div>
                 <div className="stat-value">{stats.totalUsers}</div>
               </div>
             </div>
-            <div className="stats shadow bg-secondary text-secondary-content">
+            <div className="stats shadow bg-sky-800 text-white">
               <div className="stat">
-                <div className="stat-title">Job Postings</div>
+                <div className="stat-title text-sky-200">Job Postings</div>
                 <div className="stat-value">{stats.jobPostsCount}</div>
               </div>
             </div>
-            <div className="stats shadow bg-accent text-accent-content">
+            <div className="stats shadow bg-emerald-800 text-white">
               <div className="stat">
-                <div className="stat-title">Applications</div>
+                <div className="stat-title text-emerald-200">Applications</div>
                 <div className="stat-value">{stats.applicationsCount}</div>
               </div>
             </div>
-            <div className="stats shadow bg-info text-info-content">
+            <div className="stats shadow bg-amber-800 text-white">
               <div className="stat">
-                <div className="stat-title">Resumes</div>
+                <div className="stat-title text-amber-200">Resumes</div>
                 <div className="stat-value">{stats.resumesCount || 0}</div>
               </div>
             </div>
@@ -229,28 +286,18 @@ const AdminDashboard = () => {
 
           {/* Charts Section - First Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="bg-base-200 p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">User Distribution</h2>
+            <div className="bg-gray-800 p-6 rounded-lg shadow border border-gray-700">
+              <h2 className="text-xl font-semibold mb-4 text-white">User Distribution</h2>
               <div className="h-[300px] flex items-center justify-center">
-                <Pie data={roleDistributionData} options={{ maintainAspectRatio: false }} />
+                <Pie data={roleDistributionData} options={pieOptions} />
               </div>
             </div>
-            <div className="bg-base-200 p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Top Skills in Demand</h2>
+            <div className="bg-gray-800 p-6 rounded-lg shadow border border-gray-700">
+              <h2 className="text-xl font-semibold mb-4 text-white">Top Skills in Demand</h2>
               <div className="h-[300px] flex items-center justify-center">
                 <Bar 
                   data={skillsData} 
-                  options={{ 
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        ticks: {
-                          precision: 0 // Only show integer values
-                        }
-                      }
-                    }
-                  }} 
+                  options={chartOptions} 
                 />
               </div>
             </div>
@@ -258,41 +305,21 @@ const AdminDashboard = () => {
 
           {/* Charts Section - Second Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="bg-base-200 p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Most Active Companies</h2>
+            <div className="bg-gray-800 p-6 rounded-lg shadow border border-gray-700">
+              <h2 className="text-xl font-semibold mb-4 text-white">Most Active Companies</h2>
               <div className="h-[300px] flex items-center justify-center">
                 <Bar 
                   data={companyData} 
-                  options={{ 
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        ticks: {
-                          precision: 0
-                        }
-                      }
-                    }
-                  }} 
+                  options={chartOptions} 
                 />
               </div>
             </div>
-            <div className="bg-base-200 p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">System Activity</h2>
+            <div className="bg-gray-800 p-6 rounded-lg shadow border border-gray-700">
+              <h2 className="text-xl font-semibold mb-4 text-white">System Activity</h2>
               <div className="h-[300px] flex items-center justify-center">
                 <Line 
                   data={activityChartData} 
-                  options={{ 
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        ticks: {
-                          precision: 0
-                        }
-                      }
-                    }
-                  }} 
+                  options={chartOptions} 
                 />
               </div>
             </div>
@@ -300,26 +327,26 @@ const AdminDashboard = () => {
 
           {/* Management Navigation */}
           <div className="flex flex-wrap gap-4 mb-8">
-            <Link to="/admin/users" className="btn btn-primary">
+            <Link to="/admin/users" className="btn bg-indigo-600 hover:bg-indigo-700 text-white border-none">
               Manage Users
             </Link>
-            <Link to="/admin/jobs" className="btn btn-secondary">
+            <Link to="/admin/jobs" className="btn bg-sky-600 hover:bg-sky-700 text-white border-none">
               Manage Job Posts
             </Link>
-            <Link to="/admin/applications" className="btn btn-accent">
+            <Link to="/admin/applications" className="btn bg-emerald-600 hover:bg-emerald-700 text-white border-none">
               Manage Applications
             </Link>
-            <Link to="/admin/schemas" className="btn btn-info">
+            <Link to="/admin/schemas" className="btn bg-amber-600 hover:bg-amber-700 text-white border-none">
               View Database Schemas
             </Link>
           </div>
 
           {/* Recent Users */}
-          <div className="bg-base-200 p-6 rounded-lg shadow mb-8">
-            <h2 className="text-xl font-semibold mb-4">Recent Users</h2>
+          <div className="bg-gray-800 p-6 rounded-lg shadow mb-8 border border-gray-700">
+            <h2 className="text-xl font-semibold mb-4 text-white">Recent Users</h2>
             <div className="overflow-x-auto">
-              <table className="table w-full">
-                <thead>
+              <table className="table w-full bg-gray-800 text-white">
+                <thead className="text-gray-300 bg-gray-700">
                   <tr>
                     <th>Name</th>
                     <th>Email</th>
@@ -329,37 +356,37 @@ const AdminDashboard = () => {
                 </thead>
                 <tbody>
                   {recentUsers.map((user) => (
-                    <tr key={user._id}>
-                      <td>{user.name}</td>
-                      <td>{user.email}</td>
+                    <tr key={user._id} className="border-b border-gray-700">
+                      <td className="text-white">{user.name}</td>
+                      <td className="text-gray-300">{user.email}</td>
                       <td>
                         <span className={`badge ${
                           user.role === 'Administrator' 
-                            ? 'badge-warning' 
+                            ? 'bg-amber-500 text-black' 
                             : user.role === 'Recruiter' 
-                            ? 'badge-primary' 
-                            : 'badge-secondary'
+                            ? 'bg-sky-500 text-black' 
+                            : 'bg-emerald-500 text-black'
                         }`}>
                           {user.role}
                         </span>
                       </td>
-                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                      <td className="text-gray-300">{new Date(user.createdAt).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {recentUsers.length === 0 && (
-                <div className="text-center py-4">No users found</div>
+                <div className="text-center py-4 text-gray-400">No users found</div>
               )}
             </div>
           </div>
 
           {/* Recent Job Posts */}
-          <div className="bg-base-200 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Recent Job Posts</h2>
+          <div className="bg-gray-800 p-6 rounded-lg shadow border border-gray-700">
+            <h2 className="text-xl font-semibold mb-4 text-white">Recent Job Posts</h2>
             <div className="overflow-x-auto">
-              <table className="table w-full">
-                <thead>
+              <table className="table w-full bg-gray-800 text-white">
+                <thead className="text-gray-300 bg-gray-700">
                   <tr>
                     <th>Job Title</th>
                     <th>Company</th>
@@ -369,21 +396,21 @@ const AdminDashboard = () => {
                 </thead>
                 <tbody>
                   {recentJobs.map((job) => (
-                    <tr key={job._id}>
-                      <td>{job.jobTitle}</td>
-                      <td>{job.company}</td>
+                    <tr key={job._id} className="border-b border-gray-700">
+                      <td className="text-white">{job.jobTitle}</td>
+                      <td className="text-gray-300">{job.company}</td>
                       <td>
-                        <span className="badge badge-ghost">
+                        <span className="badge bg-gray-600 text-white">
                           {job.department}
                         </span>
                       </td>
-                      <td>{new Date(job.createdAt || job.postDate).toLocaleDateString()}</td>
+                      <td className="text-gray-300">{new Date(job.createdAt || job.postDate).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {recentJobs.length === 0 && (
-                <div className="text-center py-4">No jobs found</div>
+                <div className="text-center py-4 text-gray-400">No jobs found</div>
               )}
             </div>
           </div>

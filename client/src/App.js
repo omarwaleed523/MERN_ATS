@@ -19,6 +19,8 @@ import ManageProfile from './pages/ManageProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUserManagement from './pages/AdminUserManagement';
 import AdminDatabaseSchemas from './pages/AdminDatabaseSchemas';
+import AdminJobManagement from './pages/AdminJobManagement';
+import AdminApplicationManagement from './pages/AdminApplicationManagement';
 
 const App = () => (
   <>
@@ -44,6 +46,8 @@ const App = () => (
           <Route path='/admin/dashboard' element={<AdminDashboard />} />
           <Route path='/admin/users' element={<AdminUserManagement />} />
           <Route path='/admin/schemas' element={<AdminDatabaseSchemas />} />
+          <Route path='/admin/jobs' element={<AdminJobManagement />} />
+          <Route path='/admin/applications' element={<AdminApplicationManagement />} />
         </Routes>
       </Router>
     </UserProvider>
