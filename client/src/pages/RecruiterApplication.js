@@ -71,7 +71,7 @@ const RecruiterApplication = () => {
     const handleStatusChange = async (applicationId, newStatus) => {
         try {
             setLoading(true);
-            await axios.patch(`http://localhost:5000/api/applications/${applicationId}/status`, {
+            await axios.put(`http://localhost:5000/api/applications/${applicationId}/status`, {
                 status: newStatus
             });
 
@@ -132,7 +132,7 @@ const RecruiterApplication = () => {
             setLoading(true);
 
             // Call the process matching endpoint
-            await axios.post('http://localhost:5000/api/applications/processmatching', {
+            await axios.post('http://localhost:5000/api/applications/process-matching', {
                 applicationIds: applicationsToProcess.map(app => app._id)
             });
 
@@ -440,8 +440,8 @@ const RecruiterApplication = () => {
                             {activeApplication ? (
                                 <div className="space-y-6">
                                     <div className={`bg-base-200 rounded-lg shadow-md ${activeApplication.status === 'Accepted' ? 'border-l-4 border-success' :
-                                            activeApplication.status === 'Rejected' ? 'border-l-4 border-error' :
-                                                'border-l-4 border-warning'
+                                        activeApplication.status === 'Rejected' ? 'border-l-4 border-error' :
+                                            'border-l-4 border-warning'
                                         }`}>
                                         <div className="p-6">
                                             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
