@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, isCookie } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { FiBriefcase, FiMapPin, FiDollarSign, FiCalendar, FiStar, FiAward, FiCheckCircle, FiFile, FiMail, FiPhone, FiAlertCircle, FiUser } from 'react-icons/fi';
@@ -14,19 +14,36 @@ const Viewjobpost = () => {
     const [loadingResumes, setLoadingResumes] = useState(false);
     const [applying, setApplying] = useState(false);
     const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+    const [recruiterInfo, setRecruiterInfo] = useState(null);
     const { id } = useParams();
     const navigate = useNavigate();
 
     // Get current user from cookies
-
     const userId = Cookies.get('userId') ? Cookies.get('userId') : null;
-    console.log(userId);
-    // Fetch job details
+
+    // Fetch job details with enhanced error handling
     useEffect(() => {
         const fetchJob = async () => {
             try {
+                setLoading(true);
                 const response = await axios.get(`http://localhost:5000/api/jobposts/${id}`);
                 setJob(response.data);
+                
+                // Extract recruiter info if available
+                if (response.data.userId) {
+                    console.log('Recruiter info found:', response.data.userId);
+                    setRecruiterInfo({
+                        name: response.data.userId.name || 'Unknown Recruiter',
+                        email: response.data.userId.email,
+                        company: response.data.userId.company || response.data.company
+                    });
+                } else {
+                    console.log('No recruiter info found');
+                    setRecruiterInfo({
+                        name: 'Unknown Recruiter',
+                        company: response.data.company
+                    });
+                }
             } catch (err) {
                 console.error('Error fetching job:', err);
                 setError('Failed to load job details');
@@ -365,19 +382,19 @@ const Viewjobpost = () => {
                                         <FiUser className="text-primary" />
                                         <div>
                                             <p className="text-sm text-base-content/60">Posted by</p>
-                                            <p className="text-base-content">{job?.userId?.name || 'Unknown Recruiter'}</p>
-                                            {job?.userId?.company && (
-                                                <span className="badge badge-outline mt-1">{job.userId.company}</span>
+                                            <p className="text-base-content">{recruiterInfo?.name || 'Unknown Recruiter'}</p>
+                                            {recruiterInfo?.company && (
+                                                <span className="badge badge-outline mt-1">{recruiterInfo.company}</span>
                                             )}
                                         </div>
                                     </div>
-                                    {job?.userId?.email && (
+                                    {recruiterInfo?.email && (
                                         <div className="flex items-center gap-3">
                                             <FiMail className="text-primary" />
                                             <div>
                                                 <p className="text-sm text-base-content/60">Contact</p>
-                                                <a href={`mailto:${job.userId.email}`} className="text-base-content hover:text-primary transition-colors">
-                                                    {job.userId.email}
+                                                <a href={`mailto:${recruiterInfo.email}`} className="text-base-content hover:text-primary transition-colors">
+                                                    {recruiterInfo.email}
                                                 </a>
                                             </div>
                                         </div>

@@ -366,10 +366,38 @@ const UserApplications = () => {
                                                                         app.similarity > 40 ? 'Moderate match for this role' :
                                                                             'Consider updating your resume for better matching'}
                                                                 </p>
+                                                                
+                                                                {/* Display improvement feedback if similarity is less than 100% */}
+                                                                {app.similarity < 100 && app.similarity > 0 && (
+                                                                    <div className="mt-3 border-t border-base-300 pt-3">
+                                                                        {app.missingSkills && (
+                                                                            <div className="mb-2">
+                                                                                <h5 className="text-sm font-semibold mb-1 text-base-content/80">Missing Requirements:</h5>
+                                                                                <p className="text-xs text-base-content/70 bg-base-200 p-2 rounded">
+                                                                                    {app.missingSkills}
+                                                                                </p>
+                                                                            </div>
+                                                                        )}
+                                                                        
+                                                                        {app.improvementSuggestions && (
+                                                                            <div>
+                                                                                <h5 className="text-sm font-semibold mb-1 text-base-content/80">How to Improve:</h5>
+                                                                                <p className="text-xs text-base-content/70 bg-base-200 p-2 rounded">
+                                                                                    {app.improvementSuggestions}
+                                                                                </p>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         ) : (
-                                                            <div className="">
-
+                                                            <div className="flex items-center justify-center p-2">
+                                                                <button 
+                                                                    className="btn btn-sm btn-ghost text-primary/70"
+                                                                    disabled={true}
+                                                                >
+                                                                    <FiRefreshCw className="mr-2" /> Match score not calculated yet
+                                                                </button>
                                                             </div>
                                                         )}
                                                     </div>

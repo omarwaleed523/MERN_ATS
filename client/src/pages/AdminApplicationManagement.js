@@ -18,7 +18,6 @@ const AdminApplicationManagement = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [companies, setCompanies] = useState([]);
-  const [processingMatches, setProcessingMatches] = useState(false);
 
   // Define fetchApplications using useCallback to prevent dependency cycle
   const fetchApplications = React.useCallback(async () => {
@@ -138,26 +137,6 @@ const AdminApplicationManagement = () => {
       alert(`Error deleting application: ${err.response?.data?.message || 'Unknown error'}`);
     }
   };
-  
-  const processAIMatching = async () => {
-    try {
-      setProcessingMatches(true);
-      const response = await axios.post(
-        'http://localhost:5000/api/applications/process-matching',
-        {},
-        { headers: { 'x-auth-token': user.token } }
-      );
-      
-      alert(`${response.data.count} application(s) processed. Similarity scores updated!`);
-      // Refresh applications to get updated scores
-      fetchApplications();
-    } catch (err) {
-      console.error('Error processing AI matching:', err);
-      alert(`Error processing AI matching: ${err.response?.data?.message || 'Unknown error'}`);
-    } finally {
-      setProcessingMatches(false);
-    }
-  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -185,17 +164,6 @@ const AdminApplicationManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Application Management</h1>
         <div className="flex gap-2">
-          <button
-            onClick={processAIMatching}
-            disabled={processingMatches}
-            className="btn btn-secondary"
-          >
-            {processingMatches ? (
-              <span className="loading loading-spinner"></span>
-            ) : (
-              <>Process AI Matching</>
-            )}
-          </button>
           <Link to="/admin/dashboard" className="btn btn-primary">
             Back to Dashboard
           </Link>

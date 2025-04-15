@@ -1,5 +1,5 @@
 const express = require('express');
-const { applyForJob, getUserApplications, deleteApplication, getAllApplications, processMatching, generateSimilarityScore, updateApplicationStatus } = require('../controllers/applicationcontroller');
+const { applyForJob, getUserApplications, deleteApplication, getAllApplications, processMatching, generateSimilarityScore, updateApplicationStatus, updateApplicationFeedback } = require('../controllers/applicationcontroller');
 
 const router = express.Router();
 
@@ -23,5 +23,8 @@ router.delete('/:applicationId', deleteApplication);
 
 // Route to update application status
 router.put('/:applicationId/status', updateApplicationStatus);
+
+// Route to update application feedback
+router.put('/:applicationId/feedback', updateApplicationFeedback);
 
 module.exports = router;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { FiFilter, FiSearch, FiChevronDown, FiStar, FiMail, FiPhone, FiDownload, FiCheck, FiX, FiClock, FiFileText, FiBriefcase, FiRefreshCw } from 'react-icons/fi';
+import { FiFilter, FiSearch, FiChevronDown, FiStar, FiMail, FiPhone, FiDownload, FiCheck, FiX, FiClock, FiFileText, FiBriefcase, FiRefreshCw, FiEdit2, FiSave } from 'react-icons/fi';
 
 const RecruiterApplication = () => {
     const [applications, setApplications] = useState([]);
@@ -17,6 +17,13 @@ const RecruiterApplication = () => {
     const [activeApplication, setActiveApplication] = useState(null);
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+    
+    // State for feedback editing
+    const [isEditingMissingSkills, setIsEditingMissingSkills] = useState(false);
+    const [isEditingImprovements, setIsEditingImprovements] = useState(false);
+    const [editedMissingSkills, setEditedMissingSkills] = useState('');
+    const [editedImprovements, setEditedImprovements] = useState('');
+    const [savingFeedback, setSavingFeedback] = useState(false);
 
     // Fetch all applications for jobs created by this recruiter
     useEffect(() => {
@@ -527,6 +534,183 @@ const RecruiterApplication = () => {
                                                                         <div className="bg-primary h-2 rounded-full" style={{ width: `${activeApplication.similarity}%` }}></div>
                                                                     </div>
                                                                     <span className="text-sm">{Math.round(activeApplication.similarity)}%</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Show missing skills and improvement suggestions if similarity is less than 100% */}
+                                                        {activeApplication.similarity > 0 && activeApplication.similarity < 100 && (
+                                                            <div className="mt-4 border-t border-base-300 pt-4">
+                                                                {/* Missing Skills Section with Edit Button */}
+                                                                <div className="mb-3">
+                                                                    <div className="flex justify-between items-center mb-1">
+                                                                        <span className="text-sm font-semibold text-base-content/80">Missing Requirements:</span>
+                                                                        <button 
+                                                                            className="btn btn-xs btn-ghost"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setEditedMissingSkills(activeApplication.missingSkills || '');
+                                                                                setIsEditingMissingSkills(true);
+                                                                            }}
+                                                                        >
+                                                                            <FiEdit2 size={14} />
+                                                                        </button>
+                                                                    </div>
+                                                                    {!isEditingMissingSkills ? (
+                                                                        <div className="bg-base-200 p-2 rounded text-xs text-base-content/70">
+                                                                            {activeApplication.missingSkills || "No missing skills identified."}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="space-y-2">
+                                                                            <textarea
+                                                                                className="textarea textarea-bordered w-full text-xs"
+                                                                                value={editedMissingSkills}
+                                                                                onChange={(e) => setEditedMissingSkills(e.target.value)}
+                                                                                rows={4}
+                                                                                placeholder="Enter missing skills..."
+                                                                            ></textarea>
+                                                                            <div className="flex justify-end gap-2">
+                                                                                <button 
+                                                                                    className="btn btn-xs btn-ghost"
+                                                                                    onClick={() => setIsEditingMissingSkills(false)}
+                                                                                >
+                                                                                    Cancel
+                                                                                </button>
+                                                                                <button 
+                                                                                    className="btn btn-xs btn-primary"
+                                                                                    onClick={async () => {
+                                                                                        try {
+                                                                                            setSavingFeedback(true);
+                                                                                            await axios.put(
+                                                                                                `http://localhost:5000/api/applications/${activeApplication._id}/feedback`,
+                                                                                                { missingSkills: editedMissingSkills }
+                                                                                            );
+                                                                                            
+                                                                                            // Update local state
+                                                                                            const updatedApp = { ...activeApplication, missingSkills: editedMissingSkills };
+                                                                                            setActiveApplication(updatedApp);
+                                                                                            
+                                                                                            setApplications(applications.map(app => 
+                                                                                                app._id === activeApplication._id ? updatedApp : app
+                                                                                            ));
+                                                                                            
+                                                                                            setIsEditingMissingSkills(false);
+                                                                                            setNotification({
+                                                                                                show: true,
+                                                                                                message: 'Missing skills updated successfully',
+                                                                                                type: 'success'
+                                                                                            });
+                                                                                            setTimeout(() => setNotification({ show: false }), 3000);
+                                                                                        } catch (error) {
+                                                                                            console.error('Error updating missing skills:', error);
+                                                                                            setNotification({
+                                                                                                show: true,
+                                                                                                message: 'Failed to update missing skills',
+                                                                                                type: 'error'
+                                                                                            });
+                                                                                            setTimeout(() => setNotification({ show: false }), 3000);
+                                                                                        } finally {
+                                                                                            setSavingFeedback(false);
+                                                                                        }
+                                                                                    }}
+                                                                                    disabled={savingFeedback}
+                                                                                >
+                                                                                    {savingFeedback ? (
+                                                                                        <span className="loading loading-spinner loading-xs"></span>
+                                                                                    ) : (
+                                                                                        <FiSave size={14} className="mr-1" />
+                                                                                    )}
+                                                                                    Save
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                
+                                                                {/* Improvement Suggestions Section with Edit Button */}
+                                                                <div>
+                                                                    <div className="flex justify-between items-center mb-1">
+                                                                        <span className="text-sm font-semibold text-base-content/80">Candidate Feedback:</span>
+                                                                        <button 
+                                                                            className="btn btn-xs btn-ghost"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setEditedImprovements(activeApplication.improvementSuggestions || '');
+                                                                                setIsEditingImprovements(true);
+                                                                            }}
+                                                                        >
+                                                                            <FiEdit2 size={14} />
+                                                                        </button>
+                                                                    </div>
+                                                                    {!isEditingImprovements ? (
+                                                                        <div className="bg-base-200 p-2 rounded text-xs text-base-content/70">
+                                                                            {activeApplication.improvementSuggestions || "No improvement suggestions available."}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="space-y-2">
+                                                                            <textarea
+                                                                                className="textarea textarea-bordered w-full text-xs"
+                                                                                value={editedImprovements}
+                                                                                onChange={(e) => setEditedImprovements(e.target.value)}
+                                                                                rows={4}
+                                                                                placeholder="Enter improvement suggestions..."
+                                                                            ></textarea>
+                                                                            <div className="flex justify-end gap-2">
+                                                                                <button 
+                                                                                    className="btn btn-xs btn-ghost"
+                                                                                    onClick={() => setIsEditingImprovements(false)}
+                                                                                >
+                                                                                    Cancel
+                                                                                </button>
+                                                                                <button 
+                                                                                    className="btn btn-xs btn-primary"
+                                                                                    onClick={async () => {
+                                                                                        try {
+                                                                                            setSavingFeedback(true);
+                                                                                            await axios.put(
+                                                                                                `http://localhost:5000/api/applications/${activeApplication._id}/feedback`,
+                                                                                                { improvementSuggestions: editedImprovements }
+                                                                                            );
+                                                                                            
+                                                                                            // Update local state
+                                                                                            const updatedApp = { ...activeApplication, improvementSuggestions: editedImprovements };
+                                                                                            setActiveApplication(updatedApp);
+                                                                                            
+                                                                                            setApplications(applications.map(app => 
+                                                                                                app._id === activeApplication._id ? updatedApp : app
+                                                                                            ));
+                                                                                            
+                                                                                            setIsEditingImprovements(false);
+                                                                                            setNotification({
+                                                                                                show: true,
+                                                                                                message: 'Improvement suggestions updated successfully',
+                                                                                                type: 'success'
+                                                                                            });
+                                                                                            setTimeout(() => setNotification({ show: false }), 3000);
+                                                                                        } catch (error) {
+                                                                                            console.error('Error updating improvement suggestions:', error);
+                                                                                            setNotification({
+                                                                                                show: true,
+                                                                                                message: 'Failed to update improvement suggestions',
+                                                                                                type: 'error'
+                                                                                            });
+                                                                                            setTimeout(() => setNotification({ show: false }), 3000);
+                                                                                        } finally {
+                                                                                            setSavingFeedback(false);
+                                                                                        }
+                                                                                    }}
+                                                                                    disabled={savingFeedback}
+                                                                                >
+                                                                                    {savingFeedback ? (
+                                                                                        <span className="loading loading-spinner loading-xs"></span>
+                                                                                    ) : (
+                                                                                        <FiSave size={14} className="mr-1" />
+                                                                                    )}
+                                                                                    Save
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         )}
