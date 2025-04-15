@@ -98,21 +98,31 @@ const Viewjobpost = () => {
         setApplying(true);
 
         try {
-            await axios.post('http://localhost:5000/api/applications/apply', {
+            const response = await axios.post('http://localhost:5000/api/applications/apply', {
                 userId: userId,
                 recruiterId: job.userId, // Add the recruiter ID from the job posting
                 resumeId: selectedResumeId,
                 jobPostId: id
             });
 
-            // Close modal and show success notification
+            // Close modal
             setIsModalOpen(false);
+            
+            // Extract similarity score from response
+            const similarityScore = response.data.similarityScore || 0;
+            
+            // Show tailored success message with match score
             setNotification({
                 show: true,
-                message: 'Application submitted successfully!',
+                message: `Application submitted successfully! Your resume has a ${similarityScore}% match with this job.`,
                 type: 'success'
             });
-            setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
+            
+            // Redirect to user applications page after a delay
+            setTimeout(() => {
+                setNotification({ show: false, message: '', type: '' });
+                navigate(`/applications/${userId}`);
+            }, 5000);
         } catch (error) {
             console.error('Error applying for job:', error);
             setNotification({

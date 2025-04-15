@@ -59,13 +59,13 @@ const generateSimilarityScore = async (jobDesc, resume, jobPostData) => {
       Return in this exact format:
       Score: XX (numerical score based on how many of the required skills, experience, and education requirements are met)
       
-      Missing Skills: [List specific required skills from the job requirements that are missing from the resume. Only include skills specifically mentioned in the job requirements]
+      Missing Skills: [List each missing skill on a new numbered line like "1. Skill name", "2. Skill name", etc.]
       
-      Missing Experience: [Identify specific experience requirements from the job post that the candidate lacks]
+      Missing Experience: [List each missing experience requirement on a new numbered line like "1. Experience detail", "2. Experience detail", etc.]
       
-      Missing Education: [Identify any education requirements from the job that the candidate doesn't meet]
+      Missing Education: [List each missing education requirement on a new numbered line like "1. Education requirement", "2. Education requirement", etc.]
       
-      Improvement Suggestions: [Provide 2-3 specific, actionable suggestions for improving the resume to better match this specific job. Focus on how to address the missing requirements]
+      Improvement Suggestions: [List each suggestion on a new numbered line like "1. Suggestion", "2. Suggestion", "3. Suggestion"]
     `;
 
         const response = await model.generateContent(instruction);
@@ -91,29 +91,40 @@ const generateSimilarityScore = async (jobDesc, resume, jobPostData) => {
         const suggestionsMatch = textResponse.match(/Improvement Suggestions:\s*(.+?)$/s);
         const suggestions = suggestionsMatch ? suggestionsMatch[1].trim() : "";
         
-        // Format comprehensive missing requirements
+        // Format comprehensive missing requirements with clear section separation
         let formattedMissingRequirements = "";
         
         if (missingSkills && missingSkills !== "None" && !missingSkills.toLowerCase().includes("not mentioned") && !missingSkills.toLowerCase().includes("none found")) {
-            formattedMissingRequirements += `Skills: ${missingSkills}\n\n`;
+            formattedMissingRequirements += `Skills:\n${missingSkills}\n\n`;
         }
         
         if (missingExperience && missingExperience !== "None" && !missingExperience.toLowerCase().includes("not mentioned") && !missingExperience.toLowerCase().includes("none found")) {
-            formattedMissingRequirements += `Experience: ${missingExperience}\n\n`;
+            formattedMissingRequirements += `Experience:\n${missingExperience}\n\n`;
         }
         
         if (missingEducation && missingEducation !== "None" && !missingEducation.toLowerCase().includes("not mentioned") && !missingEducation.toLowerCase().includes("none found")) {
-            formattedMissingRequirements += `Education: ${missingEducation}`;
+            formattedMissingRequirements += `Education:\n${missingEducation}`;
         }
         
         if (!formattedMissingRequirements.trim()) {
             formattedMissingRequirements = "No specific missing requirements identified. Your resume covers most of the job requirements.";
         }
         
+        // Format the improvement suggestions for better readability
+        let formattedSuggestions = suggestions;
+        if (!formattedSuggestions.match(/^\d+\.\s/m) && formattedSuggestions) {
+            // If suggestions aren't already enumerated, add enumeration manually
+            formattedSuggestions = formattedSuggestions
+                .split(/(?:\r?\n)+/)
+                .filter(s => s.trim())
+                .map((suggestion, index) => `${index + 1}. ${suggestion.trim().replace(/^-\s*/, '')}`)
+                .join('\n');
+        }
+        
         return {
             score,
             missingSkills: formattedMissingRequirements,
-            improvementSuggestions: suggestions
+            improvementSuggestions: formattedSuggestions
         };
     } catch (error) {
         console.error("❌ Error in Gemini AI:", error);
@@ -200,7 +211,37 @@ const applyForJob = async (req, res) => {
         });
 
         await application.save();
-        res.status(201).json({ message: 'Application submitted successfully!', application });
+        
+        // Automatically calculate similarity score after application submission
+        console.log("Calculating similarity score automatically for new application...");
+        
+        // Extract job post data for similarity calculation
+        const jobPostData = {
+            skills: jobPost.skills || [],
+            experience: jobPost.experience || [],
+            education: jobPost.education || []
+        };
+        
+        // Generate similarity score using the AI matching system
+        const result = await generateSimilarityScore(
+            application.jobDescriptionText,
+            application.resumeText,
+            jobPostData
+        );
+        
+        // Update the application with similarity score and feedback
+        application.similarity = result.score;
+        application.missingSkills = result.missingSkills;
+        application.improvementSuggestions = result.improvementSuggestions;
+        
+        // Save the updated application
+        await application.save();
+
+        res.status(201).json({ 
+            message: 'Application submitted successfully!', 
+            application,
+            similarityScore: result.score
+        });
     } catch (error) {
         console.error('Error applying for job:', error);
         res.status(500).json({ message: 'Failed to apply for job.' });

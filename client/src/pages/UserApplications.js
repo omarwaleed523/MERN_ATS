@@ -373,18 +373,18 @@ const UserApplications = () => {
                                                                         {app.missingSkills && (
                                                                             <div className="mb-2">
                                                                                 <h5 className="text-sm font-semibold mb-1 text-base-content/80">Missing Requirements:</h5>
-                                                                                <p className="text-xs text-base-content/70 bg-base-200 p-2 rounded">
+                                                                                <div className="text-xs text-base-content/70 bg-base-200 p-2 rounded whitespace-pre-line">
                                                                                     {app.missingSkills}
-                                                                                </p>
+                                                                                </div>
                                                                             </div>
                                                                         )}
                                                                         
                                                                         {app.improvementSuggestions && (
                                                                             <div>
                                                                                 <h5 className="text-sm font-semibold mb-1 text-base-content/80">How to Improve:</h5>
-                                                                                <p className="text-xs text-base-content/70 bg-base-200 p-2 rounded">
+                                                                                <div className="text-xs text-base-content/70 bg-base-200 p-2 rounded whitespace-pre-line">
                                                                                     {app.improvementSuggestions}
-                                                                                </p>
+                                                                                </div>
                                                                             </div>
                                                                         )}
                                                                     </div>

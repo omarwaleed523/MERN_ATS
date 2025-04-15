@@ -557,7 +557,7 @@ const RecruiterApplication = () => {
                                                                         </button>
                                                                     </div>
                                                                     {!isEditingMissingSkills ? (
-                                                                        <div className="bg-base-200 p-2 rounded text-xs text-base-content/70">
+                                                                        <div className="bg-base-200 p-2 rounded text-xs text-base-content/70 whitespace-pre-line">
                                                                             {activeApplication.missingSkills || "No missing skills identified."}
                                                                         </div>
                                                                     ) : (
@@ -643,7 +643,7 @@ const RecruiterApplication = () => {
                                                                         </button>
                                                                     </div>
                                                                     {!isEditingImprovements ? (
-                                                                        <div className="bg-base-200 p-2 rounded text-xs text-base-content/70">
+                                                                        <div className="bg-base-200 p-2 rounded text-xs text-base-content/70 whitespace-pre-line">
                                                                             {activeApplication.improvementSuggestions || "No improvement suggestions available."}
                                                                         </div>
                                                                     ) : (
