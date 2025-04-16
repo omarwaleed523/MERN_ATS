@@ -1,6 +1,8 @@
 const Application = require('../models/Application');
 const Jobpost = require('../models/Jobpost');
 const Resume = require('../models/Resume');
+const User = require('../models/User');
+const { sendApplicationStatusEmail } = require('../utils/emailNotifications');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const dotenv = require("dotenv");
 
@@ -201,6 +203,12 @@ const applyForJob = async (req, res) => {
             return res.status(404).json({ message: 'Resume not found.' });
         }
 
+        // Get the user data for email notification
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
         // Create the application with the job description and resume text
         const application = new Application({
             userId,
@@ -237,10 +245,40 @@ const applyForJob = async (req, res) => {
         // Save the updated application
         await application.save();
 
+        // Prepare application for email notification by populating relations
+        application.userId = user;
+        application.jobPostId = jobPost;
+
+        // Send application confirmation email
+        try {
+            const emailSuccess = await sendApplicationStatusEmail(application);
+            
+            if (emailSuccess) {
+                // Record that notification was sent successfully
+                application.notificationsSent = [{
+                    status: application.status,
+                    sentAt: new Date(),
+                    successful: true
+                }];
+                
+                // Update the status history entry to show email was sent
+                if (application.statusHistory && application.statusHistory.length > 0) {
+                    application.statusHistory[0].emailSent = true;
+                }
+                
+                await application.save();
+                console.log(`Application confirmation email sent to ${user.email}`);
+            }
+        } catch (emailError) {
+            console.error('Error sending application confirmation email:', emailError);
+            // Continue with the response even if email sending fails
+        }
+
         res.status(201).json({ 
             message: 'Application submitted successfully!', 
             application,
-            similarityScore: result.score
+            similarityScore: result.score,
+            emailSent: application.notificationsSent?.[0]?.successful || false
         });
     } catch (error) {
         console.error('Error applying for job:', error);
@@ -323,11 +361,17 @@ const updateApplicationStatus = async (req, res) => {
     }
 
     try {
-        const application = await Application.findById(applicationId);
+        // Find application and populate the user and job post for the email
+        const application = await Application.findById(applicationId)
+            .populate('userId', 'name email')
+            .populate('jobPostId');
 
         if (!application) {
             return res.status(404).json({ message: 'Application not found.' });
         }
+        
+        // Store the previous status for comparison
+        const previousStatus = application.status;
 
         // Update the status
         application.status = status;
@@ -354,24 +398,69 @@ const updateApplicationStatus = async (req, res) => {
             application.statusHistory = [];
         }
         
-        application.statusHistory.push({
+        // Add the history entry
+        const historyEntry = {
             status,
             changedAt: new Date(),
             changedBy: req.user ? req.user._id : null,
-            notes: notes || `Status changed to ${status}`
-        });
+            notes: notes || `Status changed to ${status}`,
+            emailSent: false // Will update this after attempting to send the email
+        };
+        
+        application.statusHistory.push(historyEntry);
         
         // Update current stage start date
         application.currentStageStartDate = new Date();
         
+        // Save the application first to ensure it's updated in the database
         await application.save();
 
-        // Email notification could be implemented here based on status changes
-        // Example: if (status === 'Interview Scheduled') { sendInterviewEmail(application); }
+        // Send email notification if the status has changed
+        if (previousStatus !== status) {
+            try {
+                // Send the email notification
+                const emailSuccess = await sendApplicationStatusEmail(application, previousStatus);
+                
+                // Update the status history entry to reflect that an email was sent
+                if (emailSuccess) {
+                    // Record that notification was sent successfully
+                    application.notificationsSent.push({
+                        status,
+                        sentAt: new Date(),
+                        successful: true
+                    });
+                    
+                    // Update the emailSent flag in the most recent history entry
+                    if (application.statusHistory.length > 0) {
+                        const lastEntry = application.statusHistory[application.statusHistory.length - 1];
+                        lastEntry.emailSent = true;
+                    }
+                    
+                    // Save the updated application with notification record
+                    await application.save();
+                    
+                    console.log(`Email notification sent for application ${applicationId} status change to ${status}`);
+                } else {
+                    // Record that notification attempt failed
+                    application.notificationsSent.push({
+                        status,
+                        sentAt: new Date(),
+                        successful: false
+                    });
+                    await application.save();
+                    
+                    console.log(`Failed to send email notification for application ${applicationId}`);
+                }
+            } catch (emailError) {
+                console.error('Error sending status change email:', emailError);
+                // Continue with the response even if email sending fails
+            }
+        }
 
         res.status(200).json({
             message: `Application status updated to ${status}`,
-            application
+            application,
+            emailSent: application.statusHistory[application.statusHistory.length - 1].emailSent
         });
     } catch (error) {
         console.error('Error updating application status:', error);

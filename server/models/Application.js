@@ -28,7 +28,13 @@ const ApplicationSchema = new mongoose.Schema({
         status: String,
         changedAt: { type: Date, default: Date.now },
         changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-        notes: String
+        notes: String,
+        emailSent: { type: Boolean, default: false }
+    }],
+    notificationsSent: [{
+        status: String,
+        sentAt: { type: Date, default: Date.now },
+        successful: Boolean
     }],
     rejectionReason: { type: String },
     interviewNotes: { type: String },

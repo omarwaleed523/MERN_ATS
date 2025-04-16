@@ -507,6 +507,20 @@ const UserApplications = () => {
                                                     </div>
                                                 </div>
                                             </div>
+                                            
+                                            {/* Email Notification Indicator */}
+                                            {app.notificationsSent && app.notificationsSent.length > 0 && (
+                                                <div className="mt-4 bg-info/10 rounded-md p-3 flex items-center gap-2 text-info-content border border-info/30">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                        <polyline points="22,6 12,13 2,6"></polyline>
+                                                    </svg>
+                                                    <div>
+                                                        <p className="text-sm font-medium">Email notifications enabled for this application</p>
+                                                        <p className="text-xs">You'll receive updates when your application status changes</p>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="bg-base-300/30 p-4 flex justify-between items-center">
