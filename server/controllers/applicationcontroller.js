@@ -298,11 +298,28 @@ const deleteApplication = async (req, res) => {
 
 // Function to update application status
 const updateApplicationStatus = async (req, res) => {
-    const { status } = req.body;
+    const { 
+        status, 
+        notes, 
+        rejectionReason, 
+        interviewNotes, 
+        assessmentResults,
+        nextSteps
+    } = req.body;
     const applicationId = req.params.applicationId;
 
-    if (!['Pending', 'Accepted', 'Rejected'].includes(status)) {
-        return res.status(400).json({ message: 'Invalid status value. Must be Pending, Accepted, or Rejected.' });
+    // Updated valid statuses based on our expanded model
+    const validStatuses = [
+        'Draft', 'Submitted', 'Under Review', 'Shortlisted', 
+        'Interview Scheduled', 'Interviewed', 'Assessment', 'Reference Check',
+        'Offer Extended', 'Offer Accepted', 'Offer Declined', 
+        'Hired', 'Rejected', 'Withdrawn'
+    ];
+
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({ 
+            message: `Invalid status value. Must be one of: ${validStatuses.join(', ')}` 
+        });
     }
 
     try {
@@ -314,12 +331,43 @@ const updateApplicationStatus = async (req, res) => {
 
         // Update the status
         application.status = status;
+        
+        // Update optional fields if provided
+        if (rejectionReason !== undefined) {
+            application.rejectionReason = rejectionReason;
+        }
+        
+        if (interviewNotes !== undefined) {
+            application.interviewNotes = interviewNotes;
+        }
+        
+        if (assessmentResults !== undefined) {
+            application.assessmentResults = assessmentResults;
+        }
+        
+        if (nextSteps !== undefined) {
+            application.nextSteps = nextSteps;
+        }
+        
+        // Add to status history with notes if provided
+        if (!application.statusHistory) {
+            application.statusHistory = [];
+        }
+        
+        application.statusHistory.push({
+            status,
+            changedAt: new Date(),
+            changedBy: req.user ? req.user._id : null,
+            notes: notes || `Status changed to ${status}`
+        });
+        
+        // Update current stage start date
+        application.currentStageStartDate = new Date();
+        
         await application.save();
 
-        // Send email notification - could be implemented in the future
-        // if (status === 'Accepted' || status === 'Rejected') {
-        //     // Send email to candidate
-        // }
+        // Email notification could be implemented here based on status changes
+        // Example: if (status === 'Interview Scheduled') { sendInterviewEmail(application); }
 
         res.status(200).json({
             message: `Application status updated to ${status}`,
@@ -367,4 +415,37 @@ const updateApplicationFeedback = async (req, res) => {
     }
 };
 
-module.exports = { applyForJob, getUserApplications, deleteApplication, getAllApplications, processMatching, generateSimilarityScore, updateApplicationStatus, updateApplicationFeedback };
+// Get application status history
+const getApplicationStatusHistory = async (req, res) => {
+    const { applicationId } = req.params;
+
+    try {
+        const application = await Application.findById(applicationId)
+            .populate('statusHistory.changedBy', 'name email role');
+
+        if (!application) {
+            return res.status(404).json({ message: 'Application not found.' });
+        }
+
+        res.status(200).json({
+            applicationId: application._id,
+            currentStatus: application.status,
+            history: application.statusHistory || []
+        });
+    } catch (error) {
+        console.error('Error retrieving application status history:', error);
+        res.status(500).json({ message: 'Failed to retrieve application status history.' });
+    }
+};
+
+module.exports = { 
+    applyForJob, 
+    getUserApplications, 
+    deleteApplication, 
+    getAllApplications, 
+    processMatching, 
+    generateSimilarityScore, 
+    updateApplicationStatus, 
+    updateApplicationFeedback,
+    getApplicationStatusHistory 
+};

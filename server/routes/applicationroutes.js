@@ -1,5 +1,15 @@
 const express = require('express');
-const { applyForJob, getUserApplications, deleteApplication, getAllApplications, processMatching, generateSimilarityScore, updateApplicationStatus, updateApplicationFeedback } = require('../controllers/applicationcontroller');
+const { 
+    applyForJob, 
+    getUserApplications, 
+    deleteApplication, 
+    getAllApplications, 
+    processMatching, 
+    generateSimilarityScore, 
+    updateApplicationStatus, 
+    updateApplicationFeedback,
+    getApplicationStatusHistory 
+} = require('../controllers/applicationcontroller');
 
 const router = express.Router();
 
@@ -11,6 +21,9 @@ router.post('/process-matching', processMatching);
 
 // Route to get all applications (for admin)
 router.get('/all', getAllApplications);
+
+// Route to get application status history
+router.get('/:applicationId/history', getApplicationStatusHistory);
 
 // Route to get applications for a specific user
 router.get('/:userId', getUserApplications);

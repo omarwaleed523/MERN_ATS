@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { FiFilter, FiSearch, FiChevronDown, FiStar, FiMail, FiPhone, FiDownload, FiCheck, FiX, FiClock, FiFileText, FiBriefcase, FiRefreshCw, FiEdit2, FiSave } from 'react-icons/fi';
+import { FiFilter, FiSearch, FiChevronDown, FiStar, FiMail, FiPhone, FiDownload, FiCheck, FiX, FiClock, FiFileText, FiBriefcase, FiRefreshCw, FiEdit2, FiSave, FiAlertCircle, FiCalendar, FiClock as FiClockO, FiEdit3, FiUserCheck, FiUserX, FiMessageSquare, FiCheckCircle, FiAlertTriangle, FiCheckSquare } from 'react-icons/fi';
 
 const RecruiterApplication = () => {
     const [applications, setApplications] = useState([]);
@@ -225,14 +225,39 @@ const RecruiterApplication = () => {
         }
     });
 
+    // Get status badge with enhanced styling for our new statuses
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'Accepted':
-                return <span className="badge badge-success gap-1"><FiCheck /> Accepted</span>;
+            case 'Draft':
+                return <span className="badge badge-ghost gap-1"><FiEdit3 /> Draft</span>;
+            case 'Submitted':
+                return <span className="badge badge-info gap-1"><FiFileText /> Submitted</span>;
+            case 'Under Review':
+                return <span className="badge badge-primary gap-1"><FiClockO /> Under Review</span>;
+            case 'Shortlisted':
+                return <span className="badge badge-secondary gap-1"><FiStar /> Shortlisted</span>;
+            case 'Interview Scheduled':
+                return <span className="badge badge-accent gap-1"><FiCalendar /> Interview Scheduled</span>;
+            case 'Interviewed':
+                return <span className="badge badge-info gap-1"><FiMessageSquare /> Interviewed</span>;
+            case 'Assessment':
+                return <span className="badge badge-warning gap-1"><FiAlertCircle /> Assessment</span>;
+            case 'Reference Check':
+                return <span className="badge badge-primary gap-1"><FiCheckSquare /> Reference Check</span>;
+            case 'Offer Extended':
+                return <span className="badge badge-secondary gap-1"><FiMail /> Offer Extended</span>;
+            case 'Offer Accepted':
+                return <span className="badge badge-success gap-1"><FiUserCheck /> Offer Accepted</span>;
+            case 'Offer Declined':
+                return <span className="badge badge-warning gap-1"><FiAlertTriangle /> Offer Declined</span>;
+            case 'Hired':
+                return <span className="badge badge-success gap-1"><FiCheckCircle /> Hired</span>;
             case 'Rejected':
-                return <span className="badge badge-error gap-1"><FiX /> Rejected</span>;
+                return <span className="badge badge-error gap-1"><FiUserX /> Rejected</span>;
+            case 'Withdrawn':
+                return <span className="badge badge-error gap-1"><FiX /> Withdrawn</span>;
             default:
-                return <span className="badge badge-warning gap-1"><FiClock /> Pending</span>;
+                return <span className="badge badge-info gap-1"><FiClock /> {status}</span>;
         }
     };
 
@@ -305,10 +330,31 @@ const RecruiterApplication = () => {
                                     value={filters.status}
                                     onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                                 >
-                                    <option value="all">All Status</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Accepted">Accepted</option>
-                                    <option value="Rejected">Rejected</option>
+                                    <option value="all">All Statuses</option>
+                                    <optgroup label="Initial Stage">
+                                        <option value="Draft">Draft</option>
+                                        <option value="Submitted">Submitted</option>
+                                        <option value="Under Review">Under Review</option>
+                                    </optgroup>
+                                    <optgroup label="Screening Stage">
+                                        <option value="Shortlisted">Shortlisted</option>
+                                        <option value="Assessment">Assessment</option>
+                                    </optgroup>
+                                    <optgroup label="Interview Stage">
+                                        <option value="Interview Scheduled">Interview Scheduled</option>
+                                        <option value="Interviewed">Interviewed</option>
+                                        <option value="Reference Check">Reference Check</option>
+                                    </optgroup>
+                                    <optgroup label="Offer Stage">
+                                        <option value="Offer Extended">Offer Extended</option>
+                                        <option value="Offer Accepted">Offer Accepted</option>
+                                        <option value="Offer Declined">Offer Declined</option>
+                                        <option value="Hired">Hired</option>
+                                    </optgroup>
+                                    <optgroup label="Closed">
+                                        <option value="Rejected">Rejected</option>
+                                        <option value="Withdrawn">Withdrawn</option>
+                                    </optgroup>
                                 </select>
                                 <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-base-content/60">
                                     <FiChevronDown size={16} />
@@ -465,32 +511,102 @@ const RecruiterApplication = () => {
                                                         <label tabIndex={0} className="btn btn-primary">
                                                             Update Status <FiChevronDown className="ml-1" />
                                                         </label>
-                                                        <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                                                        <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-72 max-h-96 overflow-y-auto">
+                                                            <li className="menu-title pt-2 pb-1">
+                                                                <span>Initial Stage</span>
+                                                            </li>
                                                             <li>
-                                                                <button
-                                                                    className="flex items-center gap-2"
-                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Pending')}
-                                                                >
-                                                                    <FiClock className="text-warning" />
-                                                                    Mark as Pending
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Submitted')}>
+                                                                    <FiFileText className="text-info" />Submitted
                                                                 </button>
                                                             </li>
                                                             <li>
-                                                                <button
-                                                                    className="flex items-center gap-2"
-                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Accepted')}
-                                                                >
-                                                                    <FiCheck className="text-success" />
-                                                                    Accept Candidate
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Under Review')}>
+                                                                    <FiClockO className="text-primary" />Under Review
+                                                                </button>
+                                                            </li>
+                                                            
+                                                            <li className="menu-title pt-3 pb-1">
+                                                                <span>Screening Stage</span>
+                                                            </li>
+                                                            <li>
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Shortlisted')}>
+                                                                    <FiStar className="text-secondary" />Shortlisted
                                                                 </button>
                                                             </li>
                                                             <li>
-                                                                <button
-                                                                    className="flex items-center gap-2"
-                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Rejected')}
-                                                                >
-                                                                    <FiX className="text-error" />
-                                                                    Reject Candidate
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Assessment')}>
+                                                                    <FiAlertCircle className="text-warning" />Assessment
+                                                                </button>
+                                                            </li>
+                                                            
+                                                            <li className="menu-title pt-3 pb-1">
+                                                                <span>Interview Stage</span>
+                                                            </li>
+                                                            <li>
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Interview Scheduled')}>
+                                                                    <FiCalendar className="text-accent" />Interview Scheduled
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Interviewed')}>
+                                                                    <FiMessageSquare className="text-info" />Interviewed
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Reference Check')}>
+                                                                    <FiCheckSquare className="text-primary" />Reference Check
+                                                                </button>
+                                                            </li>
+                                                            
+                                                            <li className="menu-title pt-3 pb-1">
+                                                                <span>Offer Stage</span>
+                                                            </li>
+                                                            <li>
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Offer Extended')}>
+                                                                    <FiMail className="text-secondary" />Offer Extended
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Offer Accepted')}>
+                                                                    <FiUserCheck className="text-success" />Offer Accepted
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Offer Declined')}>
+                                                                    <FiAlertTriangle className="text-warning" />Offer Declined
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Hired')}>
+                                                                    <FiCheckCircle className="text-success" />Hired
+                                                                </button>
+                                                            </li>
+                                                            
+                                                            <li className="menu-title pt-3 pb-1">
+                                                                <span>Closed</span>
+                                                            </li>
+                                                            <li>
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Rejected')}>
+                                                                    <FiUserX className="text-error" />Rejected
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button className="flex items-center gap-2"
+                                                                    onClick={() => handleStatusChange(activeApplication._id, 'Withdrawn')}>
+                                                                    <FiX className="text-error" />Withdrawn
                                                                 </button>
                                                             </li>
                                                         </ul>
@@ -780,6 +896,44 @@ const RecruiterApplication = () => {
                                                         </div>
                                                     </div>
                                                 )}
+                                            </div>
+
+                                            <div>
+                                                <h3 className="text-sm font-medium text-base-content/80 mb-2">Status History</h3>
+                                                <div className="bg-base-300/50 p-4 rounded-md">
+                                                    {activeApplication.statusHistory && activeApplication.statusHistory.length > 0 ? (
+                                                        <div className="relative">
+                                                            {/* Timeline line */}
+                                                            <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-base-content/20"></div>
+                                                            
+                                                            {/* Status history items */}
+                                                            <div className="space-y-4 ml-6">
+                                                                {activeApplication.statusHistory.slice().reverse().map((historyItem, index) => (
+                                                                    <div key={index} className="relative">
+                                                                        {/* Timeline dot */}
+                                                                        <div className="absolute -left-[22px] mt-1 w-4 h-4 rounded-full bg-primary"></div>
+                                                                        <div className="mb-1 flex items-start justify-between">
+                                                                            <span className="font-medium">{historyItem.status}</span>
+                                                                            <span className="text-xs text-base-content/60">
+                                                                                {new Date(historyItem.changedAt).toLocaleString()}
+                                                                            </span>
+                                                                        </div>
+                                                                        {historyItem.notes && (
+                                                                            <p className="text-xs text-base-content/70">{historyItem.notes}</p>
+                                                                        )}
+                                                                        {historyItem.changedBy && historyItem.changedBy.name && (
+                                                                            <p className="text-xs text-base-content/60 mt-1">
+                                                                                By: {historyItem.changedBy.name}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-sm text-base-content/60">No status history available</p>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {/* Action Buttons */}
