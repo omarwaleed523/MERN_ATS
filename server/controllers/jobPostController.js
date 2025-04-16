@@ -52,7 +52,8 @@ const createJobPost = async (req, res) => {
             experience,
             education,
             department,
-            userId
+            userId,
+            recruiter: userId // Set the recruiter field to match userId
         });
         await jobPost.save();
         res.status(201).json({ message: 'Job post created successfully!', jobPost });
@@ -99,7 +100,19 @@ const updateJobPost = async (req, res) => {
     try {
         const jobPost = await Jobpost.findByIdAndUpdate(
             jobPostId,
-            { jobTitle, salary, location, jobDescription, company, skills, experience, education, department, userId },
+            { 
+                jobTitle, 
+                salary, 
+                location, 
+                jobDescription, 
+                company, 
+                skills, 
+                experience, 
+                education, 
+                department, 
+                userId,
+                recruiter: userId // Set the recruiter field to match userId
+            },
             { new: true }
         );
         if (!jobPost) {
@@ -159,7 +172,8 @@ const uploadJobPost = async (req, res) => {
             experience: pythonResponse.experience || [],
             education: pythonResponse.education || [],
             department: pythonResponse.department,
-            userId
+            userId,
+            recruiter: userId // Set the recruiter field to match userId
         });
 
         await jobPost.save();

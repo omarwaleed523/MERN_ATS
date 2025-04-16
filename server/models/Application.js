@@ -50,28 +50,7 @@ const ApplicationSchema = new mongoose.Schema({
     nextSteps: { type: String } // Upcoming actions in the hiring process
 });
 
-// Pre-save middleware to automatically add status changes to history
-ApplicationSchema.pre('save', function(next) {
-    // Only track history if status is being modified or document is new
-    if (this.isNew || this.isModified('status')) {
-        const currentStatus = {
-            status: this.status,
-            changedAt: new Date(),
-            // If no changedBy is provided, it will be null
-            notes: `Status changed to ${this.status}`
-        };
-        
-        // Initialize statusHistory array if it doesn't exist
-        if (!this.statusHistory) {
-            this.statusHistory = [];
-        }
-        
-        this.statusHistory.push(currentStatus);
-        
-        // Update the currentStageStartDate when status changes
-        this.currentStageStartDate = new Date();
-    }
-    next();
-});
+// Remove the automatic pre-save middleware that adds duplicate entries
+// The status history will now be managed exclusively in the controller
 
 module.exports = mongoose.model('Application', ApplicationSchema);

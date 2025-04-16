@@ -85,6 +85,33 @@ const initializeEmailService = async () => {
 // Initialize immediately
 initializeEmailService();
 
+// Gets recruiter contact info to add to emails
+const getRecruiterContactInfoSection = (recruiterInfo) => {
+  if (!recruiterInfo || (!recruiterInfo.name && !recruiterInfo.email && !recruiterInfo.phone)) {
+    return '';
+  }
+
+  let contactInfo = 'Recruiter Contact Information:\n';
+  
+  if (recruiterInfo.name) {
+    contactInfo += `Name: ${recruiterInfo.name}\n`;
+  }
+  
+  if (recruiterInfo.email) {
+    contactInfo += `Email: ${recruiterInfo.email}\n`;
+  }
+  
+  if (recruiterInfo.phone) {
+    contactInfo += `Phone: ${recruiterInfo.phone}\n`;
+  }
+  
+  if (recruiterInfo.company) {
+    contactInfo += `Company: ${recruiterInfo.company}\n`;
+  }
+  
+  return `\n${contactInfo}`;
+};
+
 // Email templates for different application statuses
 const emailTemplates = {
   'Submitted': {
@@ -106,6 +133,7 @@ What's Next?
 We'll review your application and update its status as it progresses through our hiring workflow. You can log into your candidate dashboard at any time to check your application status.
 
 If you have any questions, please don't hesitate to contact us.
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -127,6 +155,7 @@ What's Next?
 Our team is carefully reviewing your qualifications against the requirements for this role. This process typically takes 1-2 weeks. We'll notify you when there's an update to your application status.
 
 Thank you for your patience during our review process.
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -150,6 +179,7 @@ What's Next?
 A member of our recruitment team will be in touch soon to discuss the next steps in the hiring process, which may include scheduling an interview or an assessment.
 
 Thank you for your interest in joining our team. We look forward to getting to know you better!
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -176,6 +206,7 @@ Tips for your interview:
 - Prepare examples that highlight your relevant skills and experiences
 - Have questions ready to ask the interviewer
 - Arrive (or log in) 5-10 minutes early
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 We look forward to speaking with you!
 
@@ -201,6 +232,7 @@ What's Next?
 Our team is evaluating all candidates. We expect to make a decision within the next week and will contact you regardless of the outcome.
 
 Thank you again for your interest in joining our company.
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -223,6 +255,7 @@ Application Details:
 Please follow the instructions carefully and complete the assessment by the given deadline. This is an important step in our evaluation process.
 
 If you have any questions about the assessment, please don't hesitate to contact us.
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -243,6 +276,7 @@ Application Details:
 We'll be contacting the references you provided in your application. If you need to update your reference information or have any questions about this process, please let us know.
 
 This is one of the final stages in our hiring process, and we appreciate your continued interest in the role.
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -267,6 +301,7 @@ A formal offer letter with complete details about your compensation, benefits, a
 We're excited about the possibility of you joining our team and look forward to your response.
 
 If you have any questions about the offer or need additional information, please don't hesitate to contact us.
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -289,6 +324,7 @@ ${data.nextSteps ? `Next Steps:\n${data.nextSteps}\n` : ''}
 Our HR team will be in touch soon with onboarding details and to help make your transition as smooth as possible.
 
 We're looking forward to your contributions and to welcoming you on your first day!
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -309,6 +345,7 @@ Application Details:
 We value the time you invested in the application process and would be happy to keep your information on file for future opportunities that might better align with your career goals.
 
 We wish you all the best in your future endeavors.
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -331,6 +368,7 @@ Application Details:
 Please expect further communications from our HR department with specific details about your first day and onboarding process.
 
 We're looking forward to having you on our team and to your future contributions!
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Warm welcome,
 The Team at ${data.company}
@@ -352,9 +390,14 @@ Application Details:
 
 ${data.rejectionReason ? `Feedback:\n${data.rejectionReason}\n\n` : ''}
 
+${data.missingSkills ? `Areas for Development Based on Our Requirements:\n${data.missingSkills}\n\n` : ''}
+
+${data.improvementSuggestions ? `Improvement Suggestions:\n${data.improvementSuggestions}\n\n` : ''}
+
 This decision is not a reflection on your skills or experience. We encourage you to apply for future positions that align with your qualifications.
 
 We appreciate your interest in our company and wish you the best in your job search.
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -375,6 +418,7 @@ Application Details:
 If you withdrew your application by mistake, please contact us immediately.
 
 We appreciate your interest in our company and wish you success in your career endeavors.
+${getRecruiterContactInfoSection(data.recruiterInfo)}
 
 Best regards,
 The Recruitment Team at ${data.company}
@@ -410,6 +454,23 @@ const sendApplicationStatusEmail = async (application, previousStatus) => {
       return false;
     }
 
+    // Fetch recruiter information if the job post has a recruiter
+    let recruiterInfo = null;
+    if (application.jobPostId.recruiter) {
+      try {
+        // Try to get the populated recruiter if it exists
+        const recruiterUser = application.jobPostId.recruiter;
+        recruiterInfo = {
+          name: recruiterUser.name,
+          email: recruiterUser.email,
+          phone: recruiterUser.phone || null,
+          company: application.jobPostId.company
+        };
+      } catch (err) {
+        console.warn('Unable to fetch recruiter details for email', err);
+      }
+    }
+
     // Prepare data for email template
     const emailData = {
       candidateName,
@@ -418,7 +479,10 @@ const sendApplicationStatusEmail = async (application, previousStatus) => {
       applicationId: application._id,
       appliedAt: application.appliedAt,
       nextSteps: application.nextSteps || '',
-      rejectionReason: application.rejectionReason || ''
+      rejectionReason: application.rejectionReason || '',
+      missingSkills: application.missingSkills || '',
+      improvementSuggestions: application.improvementSuggestions || '',
+      recruiterInfo: recruiterInfo
     };
     
     // Make sure email service is initialized

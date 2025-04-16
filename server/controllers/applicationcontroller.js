@@ -85,7 +85,7 @@ const generateSimilarityScore = async (jobDesc, resume, jobPostData) => {
         const missingExpMatch = textResponse.match(/Missing Experience:\s*(.+?)(?=Missing Education:|$)/s);
         const missingExperience = missingExpMatch ? missingExpMatch[1].trim() : "";
         
-        // Extract missing education
+        // Extract missing education - FIX HERE
         const missingEduMatch = textResponse.match(/Missing Education:\s*(.+?)(?=Improvement Suggestions:|$)/s);
         const missingEducation = missingEduMatch ? missingEduMatch[1].trim() : "";
         
@@ -361,10 +361,18 @@ const updateApplicationStatus = async (req, res) => {
     }
 
     try {
-        // Find application and populate the user and job post for the email
+        // Find application and populate the user, job post, and recruiter for the email
+        // Set strictPopulate to false to avoid StrictPopulateError
         const application = await Application.findById(applicationId)
             .populate('userId', 'name email')
-            .populate('jobPostId');
+            .populate({
+                path: 'jobPostId',
+                populate: {
+                    path: 'recruiter',
+                    select: 'name email phone',
+                    strictPopulate: false
+                }
+            });
 
         if (!application) {
             return res.status(404).json({ message: 'Application not found.' });
@@ -372,6 +380,15 @@ const updateApplicationStatus = async (req, res) => {
         
         // Store the previous status for comparison
         const previousStatus = application.status;
+        
+        // Skip status update if it's the same status to prevent duplicate entries
+        if (previousStatus === status) {
+            return res.status(200).json({
+                message: `Application already has status: ${status}`,
+                application,
+                emailSent: false
+            });
+        }
 
         // Update the status
         application.status = status;
@@ -393,7 +410,7 @@ const updateApplicationStatus = async (req, res) => {
             application.nextSteps = nextSteps;
         }
         
-        // Add to status history with notes if provided
+        // Initialize status history if it doesn't exist
         if (!application.statusHistory) {
             application.statusHistory = [];
         }
@@ -415,46 +432,58 @@ const updateApplicationStatus = async (req, res) => {
         // Save the application first to ensure it's updated in the database
         await application.save();
 
-        // Send email notification if the status has changed
-        if (previousStatus !== status) {
-            try {
-                // Send the email notification
-                const emailSuccess = await sendApplicationStatusEmail(application, previousStatus);
-                
-                // Update the status history entry to reflect that an email was sent
-                if (emailSuccess) {
-                    // Record that notification was sent successfully
-                    application.notificationsSent.push({
-                        status,
-                        sentAt: new Date(),
-                        successful: true
-                    });
-                    
-                    // Update the emailSent flag in the most recent history entry
-                    if (application.statusHistory.length > 0) {
-                        const lastEntry = application.statusHistory[application.statusHistory.length - 1];
-                        lastEntry.emailSent = true;
-                    }
-                    
-                    // Save the updated application with notification record
-                    await application.save();
-                    
-                    console.log(`Email notification sent for application ${applicationId} status change to ${status}`);
-                } else {
-                    // Record that notification attempt failed
-                    application.notificationsSent.push({
-                        status,
-                        sentAt: new Date(),
-                        successful: false
-                    });
-                    await application.save();
-                    
-                    console.log(`Failed to send email notification for application ${applicationId}`);
-                }
-            } catch (emailError) {
-                console.error('Error sending status change email:', emailError);
-                // Continue with the response even if email sending fails
+        // If this is a rejection status, make sure we include the missing skills and improvement suggestions
+        if (status === 'Rejected') {
+            // If no explicit rejection reason was provided, but we have AI-generated missing skills info,
+            // use that as the rejection reason to provide useful feedback
+            if (!rejectionReason && application.missingSkills) {
+                application.rejectionReason = `Based on our evaluation of your qualifications against the job requirements, we've identified some areas where your profile didn't fully match our needs for this specific role.`;
             }
+            
+            // Make sure missingSkills and improvementSuggestions are set on the application for the email
+            if (!application.missingSkills && application.similarity !== undefined && application.similarity < 70) {
+                application.missingSkills = "Your overall match score with this position was below our threshold for this role.";
+            }
+        }
+
+        // Send email notification since the status has changed
+        try {
+            // Send the email notification
+            const emailSuccess = await sendApplicationStatusEmail(application, previousStatus);
+            
+            // Update the status history entry to reflect that an email was sent
+            if (emailSuccess) {
+                // Record that notification was sent successfully
+                application.notificationsSent.push({
+                    status,
+                    sentAt: new Date(),
+                    successful: true
+                });
+                
+                // Update the emailSent flag in the most recent history entry
+                if (application.statusHistory.length > 0) {
+                    const lastEntry = application.statusHistory[application.statusHistory.length - 1];
+                    lastEntry.emailSent = true;
+                }
+                
+                // Save the updated application with notification record
+                await application.save();
+                
+                console.log(`Email notification sent for application ${applicationId} status change to ${status}`);
+            } else {
+                // Record that notification attempt failed
+                application.notificationsSent.push({
+                    status,
+                    sentAt: new Date(),
+                    successful: false
+                });
+                await application.save();
+                
+                console.log(`Failed to send email notification for application ${applicationId}`);
+            }
+        } catch (emailError) {
+            console.error('Error sending status change email:', emailError);
+            // Continue with the response even if email sending fails
         }
 
         res.status(200).json({
