@@ -8,7 +8,8 @@ const {
     generateSimilarityScore, 
     updateApplicationStatus, 
     updateApplicationFeedback,
-    getApplicationStatusHistory 
+    getApplicationStatusHistory,
+    updateMultipleApplicationStatus 
 } = require('../controllers/applicationcontroller');
 
 const router = express.Router();
@@ -39,5 +40,8 @@ router.put('/:applicationId/status', updateApplicationStatus);
 
 // Route to update application feedback
 router.put('/:applicationId/feedback', updateApplicationFeedback);
+
+// Route for bulk status updates
+router.put('/bulk-status-update', updateMultipleApplicationStatus);
 
 module.exports = router;

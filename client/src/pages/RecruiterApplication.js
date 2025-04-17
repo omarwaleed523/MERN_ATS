@@ -24,6 +24,13 @@ const RecruiterApplication = () => {
     const [editedMissingSkills, setEditedMissingSkills] = useState('');
     const [editedImprovements, setEditedImprovements] = useState('');
     const [savingFeedback, setSavingFeedback] = useState(false);
+    
+    // New state for bulk actions
+    const [selectedApplications, setSelectedApplications] = useState([]);
+    const [isBulkActionEnabled, setIsBulkActionEnabled] = useState(false);
+    const [bulkStatus, setBulkStatus] = useState('');
+    const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
+    const [processingBulkAction, setProcessingBulkAction] = useState(false);
 
     // Fetch all applications for jobs created by this recruiter
     useEffect(() => {
@@ -116,7 +123,83 @@ const RecruiterApplication = () => {
         }
     };
 
-    // Add this function to the RecruiterApplication component
+    // Handle bulk status change
+    const handleBulkStatusChange = async () => {
+        if (selectedApplications.length === 0 || !bulkStatus) {
+            setNotification({
+                show: true,
+                message: 'Please select applications and a status to update',
+                type: 'error'
+            });
+            setTimeout(() => setNotification({ show: false }), 3000);
+            return;
+        }
+
+        try {
+            setProcessingBulkAction(true);
+            
+            // Call the bulk update API
+            await axios.put('http://localhost:5000/api/applications/bulk-status-update', {
+                applicationIds: selectedApplications,
+                status: bulkStatus
+            });
+
+            // Update local state
+            setApplications(applications.map(app =>
+                selectedApplications.includes(app._id) ? { ...app, status: bulkStatus } : app
+            ));
+
+            // Update active application if it's part of the bulk update
+            if (activeApplication && selectedApplications.includes(activeApplication._id)) {
+                setActiveApplication({ ...activeApplication, status: bulkStatus });
+            }
+
+            // Reset selections
+            setSelectedApplications([]);
+            setIsBulkActionEnabled(false);
+            setShowBulkStatusModal(false);
+            setBulkStatus('');
+
+            setNotification({
+                show: true,
+                message: `Updated ${selectedApplications.length} application(s) to "${bulkStatus}"`,
+                type: 'success'
+            });
+            setTimeout(() => setNotification({ show: false }), 3000);
+        } catch (err) {
+            console.error('Error updating application statuses in bulk:', err);
+            setNotification({
+                show: true,
+                message: 'Failed to update applications. Please try again.',
+                type: 'error'
+            });
+            setTimeout(() => setNotification({ show: false }), 3000);
+        } finally {
+            setProcessingBulkAction(false);
+        }
+    };
+
+    // Toggle application selection
+    const toggleApplicationSelection = (applicationId) => {
+        setSelectedApplications(prevSelected => {
+            if (prevSelected.includes(applicationId)) {
+                return prevSelected.filter(id => id !== applicationId);
+            } else {
+                return [...prevSelected, applicationId];
+            }
+        });
+    };
+
+    // Toggle bulk action mode
+    const toggleBulkActionMode = () => {
+        setIsBulkActionEnabled(!isBulkActionEnabled);
+        if (isBulkActionEnabled) {
+            // Clear selections when disabling bulk mode
+            setSelectedApplications([]);
+        }
+    };
+
+    // Calculate similarity for matching
     const calculateSimilarity = async (jobId = null) => {
         try {
             // If a specific job ID is provided, filter applications for that job
@@ -296,6 +379,71 @@ const RecruiterApplication = () => {
                 </div>
             )}
 
+            {/* Bulk Status Update Modal */}
+            {showBulkStatusModal && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+                    <div className="modal-box bg-base-100 p-6 rounded-lg shadow-xl max-w-md">
+                        <h3 className="font-bold text-lg mb-4">Bulk Update Application Status</h3>
+                        <p className="mb-4">Update status for {selectedApplications.length} selected application(s)</p>
+                        
+                        <div className="form-control mb-4">
+                            <label className="label">
+                                <span className="label-text">New Status</span>
+                            </label>
+                            <select 
+                                className="select select-bordered w-full" 
+                                value={bulkStatus}
+                                onChange={(e) => setBulkStatus(e.target.value)}
+                            >
+                                <option value="" disabled>Select a status</option>
+                                <optgroup label="Initial Stage">
+                                    <option value="Draft">Draft</option>
+                                    <option value="Submitted">Submitted</option>
+                                    <option value="Under Review">Under Review</option>
+                                </optgroup>
+                                <optgroup label="Screening Stage">
+                                    <option value="Shortlisted">Shortlisted</option>
+                                    <option value="Assessment">Assessment</option>
+                                </optgroup>
+                                <optgroup label="Interview Stage">
+                                    <option value="Interview Scheduled">Interview Scheduled</option>
+                                    <option value="Interviewed">Interviewed</option>
+                                    <option value="Reference Check">Reference Check</option>
+                                </optgroup>
+                                <optgroup label="Offer Stage">
+                                    <option value="Offer Extended">Offer Extended</option>
+                                    <option value="Offer Accepted">Offer Accepted</option>
+                                    <option value="Offer Declined">Offer Declined</option>
+                                    <option value="Hired">Hired</option>
+                                </optgroup>
+                                <optgroup label="Closed">
+                                    <option value="Rejected">Rejected</option>
+                                    <option value="Withdrawn">Withdrawn</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        
+                        <div className="flex justify-end gap-3">
+                            <button 
+                                className="btn btn-outline" 
+                                onClick={() => setShowBulkStatusModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                className="btn btn-primary" 
+                                onClick={handleBulkStatusChange}
+                                disabled={!bulkStatus || processingBulkAction}
+                            >
+                                {processingBulkAction ? (
+                                    <span className="loading loading-spinner loading-sm"></span>
+                                ) : 'Update Applications'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="bg-base-200 py-8 mb-6">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h1 className="text-3xl font-bold text-base-content">Applicant Management</h1>
@@ -399,8 +547,28 @@ const RecruiterApplication = () => {
                             </div>
                         </div>
 
-                        {/* Add this after the sort dropdown in the filter bar */}
-                        <div className="ml-auto">
+                        {/* Action buttons */}
+                        <div className="ml-auto flex gap-2">
+                            <button
+                                className={`btn ${isBulkActionEnabled ? 'btn-error' : 'btn-secondary'} btn-sm`}
+                                onClick={toggleBulkActionMode}
+                            >
+                                {isBulkActionEnabled ? (
+                                    <>Cancel Bulk Select</>
+                                ) : (
+                                    <>Bulk Actions</>
+                                )}
+                            </button>
+                            
+                            {isBulkActionEnabled && selectedApplications.length > 0 && (
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => setShowBulkStatusModal(true)}
+                                >
+                                    Update {selectedApplications.length} Selected
+                                </button>
+                            )}
+                            
                             <button
                                 className="btn btn-primary btn-sm"
                                 onClick={() => calculateSimilarity(filters.job !== 'all' ? filters.job : null)}
@@ -451,6 +619,11 @@ const RecruiterApplication = () => {
                         <div className="lg:col-span-1 space-y-4">
                             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                                 <FiFileText className="text-primary" /> Applications
+                                {isBulkActionEnabled && (
+                                    <span className="text-sm font-normal text-base-content/70">
+                                        ({selectedApplications.length} selected)
+                                    </span>
+                                )}
                             </h2>
 
                             <div className="bg-base-200 rounded-lg overflow-hidden shadow-md">
@@ -458,20 +631,40 @@ const RecruiterApplication = () => {
                                     {sortedApplications.map(application => (
                                         <div
                                             key={application._id}
-                                            onClick={() => setActiveApplication(application)}
-                                            className={`border-b border-base-300 p-4 cursor-pointer hover:bg-base-300/50 transition-colors ${activeApplication?._id === application._id ? 'bg-primary/10 border-l-4 border-l-primary' : ''}`}
+                                            onClick={() => isBulkActionEnabled 
+                                                ? toggleApplicationSelection(application._id) 
+                                                : setActiveApplication(application)
+                                            }
+                                            className={`border-b border-base-300 p-4 cursor-pointer hover:bg-base-300/50 transition-colors ${
+                                                isBulkActionEnabled && selectedApplications.includes(application._id) 
+                                                    ? 'bg-primary/20 border-l-4 border-l-primary' 
+                                                    : !isBulkActionEnabled && activeApplication?._id === application._id
+                                                    ? 'bg-primary/10 border-l-4 border-l-primary'
+                                                    : ''
+                                            }`}
                                         >
                                             <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h3 className="font-medium">
-                                                        {application.resumeId?.Name || "Unknown Candidate"}
-                                                    </h3>
-                                                    <p className="text-sm text-base-content/70">
-                                                        {application.jobPostId?.jobTitle || "Unknown Position"}
-                                                    </p>
-                                                    <p className="text-xs text-base-content/50 mt-1">
-                                                        Applied {formatDate(application.appliedAt)}
-                                                    </p>
+                                                <div className="flex items-center gap-3">
+                                                    {isBulkActionEnabled && (
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="checkbox checkbox-sm checkbox-primary"
+                                                            checked={selectedApplications.includes(application._id)}
+                                                            onChange={() => toggleApplicationSelection(application._id)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    )}
+                                                    <div>
+                                                        <h3 className="font-medium">
+                                                            {application.resumeId?.Name || "Unknown Candidate"}
+                                                        </h3>
+                                                        <p className="text-sm text-base-content/70">
+                                                            {application.jobPostId?.jobTitle || "Unknown Position"}
+                                                        </p>
+                                                        <p className="text-xs text-base-content/50 mt-1">
+                                                            Applied {formatDate(application.appliedAt)}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                                 <div className="flex flex-col items-end">
                                                     {getStatusBadge(application.status)}

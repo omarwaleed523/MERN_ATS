@@ -556,6 +556,152 @@ const getApplicationStatusHistory = async (req, res) => {
     }
 };
 
+// Function to update multiple application statuses at once
+const updateMultipleApplicationStatus = async (req, res) => {
+    const { applicationIds, status, notes } = req.body;
+
+    // Updated valid statuses based on our expanded model
+    const validStatuses = [
+        'Draft', 'Submitted', 'Under Review', 'Shortlisted', 
+        'Interview Scheduled', 'Interviewed', 'Assessment', 'Reference Check',
+        'Offer Extended', 'Offer Accepted', 'Offer Declined', 
+        'Hired', 'Rejected', 'Withdrawn'
+    ];
+
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({ 
+            message: `Invalid status value. Must be one of: ${validStatuses.join(', ')}` 
+        });
+    }
+
+    if (!applicationIds || !Array.isArray(applicationIds) || applicationIds.length === 0) {
+        return res.status(400).json({ message: 'Application IDs array is required and cannot be empty.' });
+    }
+
+    try {
+        const results = {
+            success: 0,
+            failed: 0,
+            emailsSent: 0,
+            errors: []
+        };
+
+        // Process each application
+        for (const applicationId of applicationIds) {
+            try {
+                // Find application and populate the user, job post, and recruiter for the email
+                const application = await Application.findById(applicationId)
+                    .populate('userId', 'name email')
+                    .populate({
+                        path: 'jobPostId',
+                        populate: {
+                            path: 'recruiter',
+                            select: 'name email phone',
+                            strictPopulate: false
+                        }
+                    });
+
+                if (!application) {
+                    results.failed++;
+                    results.errors.push({ id: applicationId, error: 'Application not found' });
+                    continue;
+                }
+                
+                // Skip if status is already the same to prevent duplicate entries
+                if (application.status === status) {
+                    results.success++;
+                    continue;
+                }
+
+                // Store the previous status for comparison
+                const previousStatus = application.status;
+                
+                // Update the status
+                application.status = status;
+
+                // Initialize status history if it doesn't exist
+                if (!application.statusHistory) {
+                    application.statusHistory = [];
+                }
+                
+                // Add the history entry
+                const historyEntry = {
+                    status,
+                    changedAt: new Date(),
+                    changedBy: req.user ? req.user._id : null,
+                    notes: notes || `Status changed to ${status} (bulk update)`,
+                    emailSent: false // Will update this after attempting to send the email
+                };
+                
+                application.statusHistory.push(historyEntry);
+                
+                // Update current stage start date
+                application.currentStageStartDate = new Date();
+                
+                // Save the application first to ensure it's updated in the database
+                await application.save();
+
+                // If this is a rejection status, make sure we include the missing skills and improvement suggestions
+                if (status === 'Rejected' && application.missingSkills) {
+                    application.rejectionReason = `Based on our evaluation of your qualifications against the job requirements, we've identified some areas where your profile didn't fully match our needs for this specific role.`;
+                    
+                    // Make sure missingSkills and improvementSuggestions are set on the application for the email
+                    if (!application.missingSkills && application.similarity !== undefined && application.similarity < 70) {
+                        application.missingSkills = "Your overall match score with this position was below our threshold for this role.";
+                    }
+                }
+
+                // Send email notification since the status has changed
+                try {
+                    // Send the email notification
+                    const emailSuccess = await sendApplicationStatusEmail(application, previousStatus);
+                    
+                    // Update the status history entry to reflect that an email was sent
+                    if (emailSuccess) {
+                        // Record that notification was sent successfully
+                        if (!application.notificationsSent) {
+                            application.notificationsSent = [];
+                        }
+                        
+                        application.notificationsSent.push({
+                            status,
+                            sentAt: new Date(),
+                            successful: true
+                        });
+                        
+                        // Update the emailSent flag in the most recent history entry
+                        if (application.statusHistory.length > 0) {
+                            const lastEntry = application.statusHistory[application.statusHistory.length - 1];
+                            lastEntry.emailSent = true;
+                        }
+                        
+                        // Save the updated application with notification record
+                        await application.save();
+                        results.emailsSent++;
+                    }
+                } catch (emailError) {
+                    console.error(`Error sending status change email for application ${applicationId}:`, emailError);
+                    // Continue with the next application even if email sending fails
+                }
+
+                results.success++;
+            } catch (error) {
+                console.error(`Error updating application ${applicationId}:`, error);
+                results.failed++;
+                results.errors.push({ id: applicationId, error: error.message });
+            }
+        }
+
+        res.status(200).json({
+            message: `Bulk update completed: ${results.success} successful, ${results.failed} failed, ${results.emailsSent} emails sent`,
+            results
+        });
+    } catch (error) {
+        console.error('Error in bulk application status update:', error);
+        res.status(500).json({ message: 'Failed to update application statuses.' });
+    }
+};
+
 module.exports = { 
     applyForJob, 
     getUserApplications, 
@@ -565,5 +711,6 @@ module.exports = {
     generateSimilarityScore, 
     updateApplicationStatus, 
     updateApplicationFeedback,
-    getApplicationStatusHistory 
+    getApplicationStatusHistory,
+    updateMultipleApplicationStatus
 };
