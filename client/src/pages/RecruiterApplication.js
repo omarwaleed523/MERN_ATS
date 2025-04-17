@@ -344,6 +344,122 @@ const RecruiterApplication = () => {
         }
     };
 
+    // Get the next logical statuses for the current status
+    const getNextStatuses = (currentStatus) => {
+        switch (currentStatus) {
+            case 'Draft':
+                return ['Submitted'];
+            case 'Submitted':
+                return ['Under Review'];
+            case 'Under Review':
+                return ['Shortlisted', 'Rejected'];
+            case 'Shortlisted':
+                return ['Interview Scheduled', 'Assessment'];
+            case 'Assessment':
+                return ['Shortlisted', 'Interview Scheduled', 'Rejected'];
+            case 'Interview Scheduled':
+                return ['Interviewed'];
+            case 'Interviewed':
+                return ['Reference Check', 'Assessment', 'Rejected'];
+            case 'Reference Check':
+                return ['Offer Extended', 'Rejected'];
+            case 'Offer Extended':
+                return ['Offer Accepted', 'Offer Declined'];
+            case 'Offer Accepted':
+                return ['Hired'];
+            case 'Offer Declined':
+                return ['Rejected'];
+            case 'Hired':
+                return []; // Terminal state
+            case 'Rejected':
+                return []; // Terminal state
+            case 'Withdrawn':
+                return []; // Terminal state
+            default:
+                return [];
+        }
+    };
+
+    // Get the description for each status transition
+    const getStatusTransitionDescription = (targetStatus) => {
+        switch (targetStatus) {
+            case 'Submitted':
+                return 'Confirm application is complete and ready for review';
+            case 'Under Review':
+                return 'Begin evaluating candidate qualifications';
+            case 'Shortlisted':
+                return 'Candidate meets basic qualifications and moves to next stage';
+            case 'Assessment':
+                return 'Assign technical or skill assessment to candidate';
+            case 'Interview Scheduled':
+                return 'Schedule initial or next round interview';
+            case 'Interviewed':
+                return 'Mark interview as completed';
+            case 'Reference Check':
+                return 'Begin checking candidate references';
+            case 'Offer Extended':
+                return 'Send job offer to candidate';
+            case 'Offer Accepted':
+                return 'Candidate has accepted the offer';
+            case 'Offer Declined':
+                return 'Candidate has declined the offer';
+            case 'Hired':
+                return 'Complete onboarding process for the new hire';
+            case 'Rejected':
+                return 'Remove candidate from consideration';
+            case 'Withdrawn':
+                return 'Candidate has withdrawn their application';
+            default:
+                return '';
+        }
+    };
+
+    // Function to render next step buttons
+    const renderNextStepButtons = (application, handleStatusChange) => {
+        const nextStatuses = getNextStatuses(application.status);
+        
+        if (nextStatuses.length === 0) {
+            return (
+                <div className="opacity-70 italic text-sm mt-1">
+                    This application is in a terminal state.
+                </div>
+            );
+        }
+        
+        return (
+            <div className="mt-4">
+                <div className="text-xs font-semibold mb-2 text-base-content/70">Continue to iterate?</div>
+                <div className="flex flex-wrap gap-2">
+                    {nextStatuses.map((status) => (
+                        <button
+                            key={status}
+                            onClick={() => handleStatusChange(application._id, status)}
+                            className={`btn btn-sm gap-1 ${
+                                status === 'Rejected' || status === 'Withdrawn' || status === 'Offer Declined' 
+                                    ? 'btn-error' 
+                                    : status === 'Hired' || status === 'Offer Accepted' || status === 'Shortlisted'
+                                        ? 'btn-success'
+                                        : 'btn-primary'
+                            }`}
+                            title={getStatusTransitionDescription(status)}
+                        >
+                            {status === 'Rejected' && <FiUserX />}
+                            {status === 'Shortlisted' && <FiStar />}
+                            {status === 'Interview Scheduled' && <FiCalendar />}
+                            {status === 'Interviewed' && <FiMessageSquare />}
+                            {status === 'Assessment' && <FiAlertCircle />}
+                            {status === 'Reference Check' && <FiCheckSquare />}
+                            {status === 'Offer Extended' && <FiMail />}
+                            {status === 'Offer Accepted' && <FiUserCheck />}
+                            {status === 'Hired' && <FiCheckCircle />}
+                            <span>Move to {status}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
         return new Date(dateString).toLocaleDateString(undefined, options);
@@ -1147,6 +1263,9 @@ const RecruiterApplication = () => {
                                                     </button>
                                                 </div>
                                             </div>
+
+                                            {/* Render next step buttons */}
+                                            {renderNextStepButtons(activeApplication, handleStatusChange)}
                                         </div>
                                     </div>
 

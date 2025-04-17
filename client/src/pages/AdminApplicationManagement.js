@@ -184,8 +184,15 @@ const AdminApplicationManagement = () => {
             >
               <option value="All">All Status</option>
               <option value="Pending">Pending</option>
+              <option value="Screening">Screening</option>
+              <option value="Interview">Interview</option>
+              <option value="Technical Assessment">Technical Assessment</option>
+              <option value="Reference Check">Reference Check</option>
+              <option value="Offer Extended">Offer Extended</option>
               <option value="Accepted">Accepted</option>
               <option value="Rejected">Rejected</option>
+              <option value="Withdrawn">Withdrawn</option>
+              <option value="On Hold">On Hold</option>
             </select>
           </div>
 
@@ -289,7 +296,13 @@ const AdminApplicationManagement = () => {
                       <span 
                         className={`badge ${
                           app.status === 'Accepted' ? 'badge-success' :
+                          app.status === 'Offer Extended' ? 'badge-success' :
                           app.status === 'Rejected' ? 'badge-error' :
+                          app.status === 'Withdrawn' ? 'badge-error' :
+                          app.status === 'Interview' ? 'badge-info' :
+                          app.status === 'Technical Assessment' ? 'badge-info' :
+                          app.status === 'Reference Check' ? 'badge-info' :
+                          app.status === 'On Hold' ? 'badge-secondary' :
                           'badge-warning'
                         }`}
                       >
@@ -345,8 +358,15 @@ const AdminApplicationManagement = () => {
                 onChange={(e) => setNewStatus(e.target.value)}
               >
                 <option value="Pending">Pending</option>
+                <option value="Screening">Screening</option>
+                <option value="Interview">Interview</option>
+                <option value="Technical Assessment">Technical Assessment</option>
+                <option value="Reference Check">Reference Check</option>
+                <option value="Offer Extended">Offer Extended</option>
                 <option value="Accepted">Accepted</option>
                 <option value="Rejected">Rejected</option>
+                <option value="Withdrawn">Withdrawn</option>
+                <option value="On Hold">On Hold</option>
               </select>
             </div>
             
@@ -358,7 +378,13 @@ const AdminApplicationManagement = () => {
                 Cancel
               </button>
               <button 
-                className={`btn ${newStatus === 'Accepted' ? 'btn-success' : newStatus === 'Rejected' ? 'btn-error' : 'btn-warning'}`}
+                className={`btn ${
+                  newStatus === 'Accepted' || newStatus === 'Offer Extended' ? 'btn-success' : 
+                  newStatus === 'Rejected' || newStatus === 'Withdrawn' ? 'btn-error' : 
+                  newStatus === 'Interview' || newStatus === 'Technical Assessment' || newStatus === 'Reference Check' ? 'btn-info' :
+                  newStatus === 'On Hold' ? 'btn-secondary' :
+                  'btn-warning'
+                }`}
                 onClick={handleStatusChange}
               >
                 Update Status
