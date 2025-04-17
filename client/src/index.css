@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.dropdown .dropdown-content {
+  width: max-content;
+  min-width: 100%;
+  white-space: nowrap;
+}
