@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { FiFilter, FiSearch, FiChevronDown, FiStar, FiMail, FiPhone, FiDownload, FiCheck, FiX, FiClock, FiFileText, FiBriefcase, FiRefreshCw, FiEdit2, FiSave, FiAlertCircle, FiCalendar, FiClock as FiClockO, FiEdit3, FiUserCheck, FiUserX, FiMessageSquare, FiCheckCircle, FiAlertTriangle, FiCheckSquare } from 'react-icons/fi';
+import { FiFilter, FiSearch, FiChevronDown, FiStar, FiMail, FiPhone, FiDownload, FiCheck, FiX, FiClock, FiFileText, FiBriefcase, FiRefreshCw, FiEdit2, FiSave, FiAlertCircle, FiCalendar, FiClock as FiClockO, FiEdit3, FiUserCheck, FiUserX, FiMessageSquare, FiCheckCircle, FiAlertTriangle, FiCheckSquare, FiTag, FiPlus, FiSliders, FiBookOpen, FiBriefcase as FiBriefcase2 } from 'react-icons/fi';
 
 const RecruiterApplication = () => {
     const [applications, setApplications] = useState([]);
@@ -13,6 +13,16 @@ const RecruiterApplication = () => {
         searchTerm: '',
         sortBy: 'date'
     });
+    // Advanced keyword filtering
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+    const [keywordFilters, setKeywordFilters] = useState({
+        skills: [],
+        experience: [],
+        education: []
+    });
+    const [currentKeyword, setCurrentKeyword] = useState('');
+    const [currentKeywordType, setCurrentKeywordType] = useState('skills');
+    
     const [jobPosts, setJobPosts] = useState([]);
     const [activeApplication, setActiveApplication] = useState(null);
     const [showResumeModal, setShowResumeModal] = useState(false);
@@ -31,6 +41,41 @@ const RecruiterApplication = () => {
     const [bulkStatus, setBulkStatus] = useState('');
     const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
     const [processingBulkAction, setProcessingBulkAction] = useState(false);
+
+    // Add keyword to filters
+    const addKeywordFilter = (type, keyword) => {
+        if (!keyword.trim()) return;
+        
+        setKeywordFilters(prev => ({
+            ...prev,
+            [type]: [...prev[type], keyword.trim().toLowerCase()]
+        }));
+        setCurrentKeyword('');
+    };
+
+    // Remove keyword from filters
+    const removeKeywordFilter = (type, keyword) => {
+        setKeywordFilters(prev => ({
+            ...prev,
+            [type]: prev[type].filter(k => k !== keyword)
+        }));
+    };
+
+    // Clear all keyword filters
+    const clearAllKeywordFilters = () => {
+        setKeywordFilters({
+            skills: [],
+            experience: [],
+            education: []
+        });
+    };
+
+    // Check if any keyword filters are active
+    const hasActiveKeywordFilters = () => {
+        return keywordFilters.skills.length > 0 || 
+               keywordFilters.experience.length > 0 || 
+               keywordFilters.education.length > 0;
+    };
 
     // Fetch all applications for jobs created by this recruiter
     useEffect(() => {
@@ -297,7 +342,66 @@ const RecruiterApplication = () => {
             const candidateName = app.resumeId?.Name?.toLowerCase() || '';
             const candidateEmail = app.resumeId?.Email?.toLowerCase() || '';
 
-            return candidateName.includes(searchLower) || candidateEmail.includes(searchLower);
+            if (!candidateName.includes(searchLower) && !candidateEmail.includes(searchLower)) {
+                return false;
+            }
+        }
+
+        // Filter by keywords (skills, experience, education)
+        // Skills filter
+        if (keywordFilters.skills.length > 0) {
+            const hasSkills = app.resumeId?.Skills?.some(skill => 
+                keywordFilters.skills.some(keyword => 
+                    skill.toLowerCase().includes(keyword)
+                )
+            );
+            
+            // Also check job post's missingSkills field to see if the keywords appear there
+            const missingSkillsText = (app.missingSkills || '').toLowerCase();
+            const missingSkillsMatch = keywordFilters.skills.some(keyword => 
+                missingSkillsText.includes(keyword)
+            );
+            
+            if (!hasSkills && !missingSkillsMatch) {
+                return false;
+            }
+        }
+        
+        // Experience filter
+        if (keywordFilters.experience.length > 0) {
+            // Check in experience title and company and description
+            const experiences = app.resumeId?.Experience || [];
+            const hasExperience = experiences.some(exp => {
+                const title = (exp.Title || exp.position || '').toLowerCase();
+                const company = (exp.Company || exp.company || '').toLowerCase();
+                const description = (exp.description || '').toLowerCase();
+                
+                return keywordFilters.experience.some(keyword => 
+                    title.includes(keyword) || company.includes(keyword) || description.includes(keyword)
+                );
+            });
+            
+            if (!hasExperience) {
+                return false;
+            }
+        }
+        
+        // Education filter
+        if (keywordFilters.education.length > 0) {
+            // Check in education degree and university
+            const educations = app.resumeId?.Education || [];
+            const hasEducation = educations.some(edu => {
+                const degree = (edu.Degree || edu.degree || '').toLowerCase();
+                const university = (edu.University || edu.institution || '').toLowerCase();
+                
+                return keywordFilters.education.some(keyword => 
+                    degree.includes(keyword) || university.includes(keyword)
+                );
+            });
+            
+            if (!hasEducation) {
+                return false;
+            }
         }
 
         return true;
@@ -675,6 +779,14 @@ const RecruiterApplication = () => {
                         {/* Action buttons */}
                         <div className="ml-auto flex gap-2">
                             <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                            >
+                                <FiSliders className="mr-1" />
+                                {showAdvancedFilters ? 'Hide Filters' : 'Advanced Filters'}
+                            </button>
+                            
+                            <button
                                 className={`btn ${isBulkActionEnabled ? 'btn-error' : 'btn-secondary'} btn-sm`}
                                 onClick={toggleBulkActionMode}
                             >
@@ -705,6 +817,131 @@ const RecruiterApplication = () => {
                         </div>
                     </div>
 
+                    {/* Advanced Keyword Filters Section */}
+                    {showAdvancedFilters && (
+                        <div className="bg-base-100/40 p-4 rounded-lg mt-4 border border-base-300">
+                            <div className="text-lg font-medium mb-3 flex items-center">
+                                <FiTag className="mr-2 text-primary" /> 
+                                Advanced Keyword Filters
+                                {hasActiveKeywordFilters() && (
+                                    <button 
+                                        className="btn btn-xs btn-ghost ml-auto" 
+                                        onClick={clearAllKeywordFilters}
+                                        title="Clear all filters"
+                                    >
+                                        Clear All
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Keyword input form */}
+                            <div className="flex flex-wrap gap-3 mb-4">
+                                <div className="flex-grow">
+                                    <div className="join w-full">
+                                        <select 
+                                            className="select select-bordered join-item w-[120px]"
+                                            value={currentKeywordType}
+                                            onChange={(e) => setCurrentKeywordType(e.target.value)}
+                                        >
+                                            <option value="skills">Skills</option>
+                                            <option value="experience">Experience</option>
+                                            <option value="education">Education</option>
+                                        </select>
+                                        <input 
+                                            type="text" 
+                                            placeholder={`Enter ${currentKeywordType} keyword...`}
+                                            className="input input-bordered join-item flex-grow"
+                                            value={currentKeyword}
+                                            onChange={(e) => setCurrentKeyword(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    addKeywordFilter(currentKeywordType, currentKeyword);
+                                                }
+                                            }}
+                                        />
+                                        <button 
+                                            className="btn btn-primary join-item"
+                                            onClick={() => addKeywordFilter(currentKeywordType, currentKeyword)}
+                                            disabled={!currentKeyword.trim()}
+                                        >
+                                            <FiPlus /> Add
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Active filters display */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Skills filter tags */}
+                                <div className="border border-base-200 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-2 text-sm font-medium">
+                                        <FiTag className="text-primary" /> Skills
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {keywordFilters.skills.length > 0 ? (
+                                            keywordFilters.skills.map((keyword, index) => (
+                                                <span key={index} className="badge badge-primary badge-outline gap-1">
+                                                    {keyword}
+                                                    <button 
+                                                        className="ml-1" 
+                                                        onClick={() => removeKeywordFilter('skills', keyword)}
+                                                    >✕</button>
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-xs text-base-content/50 italic">No skill filters</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Experience filter tags */}
+                                <div className="border border-base-200 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-2 text-sm font-medium">
+                                        <FiBriefcase2 className="text-primary" /> Experience
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {keywordFilters.experience.length > 0 ? (
+                                            keywordFilters.experience.map((keyword, index) => (
+                                                <span key={index} className="badge badge-secondary badge-outline gap-1">
+                                                    {keyword}
+                                                    <button 
+                                                        className="ml-1" 
+                                                        onClick={() => removeKeywordFilter('experience', keyword)}
+                                                    >✕</button>
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-xs text-base-content/50 italic">No experience filters</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Education filter tags */}
+                                <div className="border border-base-200 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-2 text-sm font-medium">
+                                        <FiBookOpen className="text-primary" /> Education
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {keywordFilters.education.length > 0 ? (
+                                            keywordFilters.education.map((keyword, index) => (
+                                                <span key={index} className="badge badge-accent badge-outline gap-1">
+                                                    {keyword}
+                                                    <button 
+                                                        className="ml-1" 
+                                                        onClick={() => removeKeywordFilter('education', keyword)}
+                                                    >✕</button>
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-xs text-base-content/50 italic">No education filters</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Bottom row with results count and filter badge */}
                     <div className="flex items-center justify-between mt-4 text-sm">
                         <div className="text-base-content/70 flex items-center gap-2">
@@ -712,8 +949,8 @@ const RecruiterApplication = () => {
                             <span>Showing <span className="font-medium text-primary">{filteredApplications.length}</span> of {applications.length} applications</span>
                         </div>
 
-                        {/* Optional: Add filter badges */}
-                        <div className="flex gap-2">
+                        {/* Filter badges */}
+                        <div className="flex flex-wrap gap-2">
                             {filters.status !== 'all' && (
                                 <span className="badge badge-primary badge-sm">
                                     Status: {filters.status}
@@ -724,6 +961,11 @@ const RecruiterApplication = () => {
                                 <span className="badge badge-primary badge-sm">
                                     Job: {jobPosts.find(j => j.id === filters.job)?.title || 'Selected Job'}
                                     <button className="ml-1" onClick={() => setFilters({ ...filters, job: 'all' })}>×</button>
+                                </span>
+                            )}
+                            {hasActiveKeywordFilters() && (
+                                <span className="badge badge-secondary badge-sm">
+                                    Using {keywordFilters.skills.length + keywordFilters.experience.length + keywordFilters.education.length} keyword filters
                                 </span>
                             )}
                         </div>
@@ -1423,7 +1665,7 @@ const RecruiterApplication = () => {
                                                 </h5>
                                                 {edu.grade && (
                                                     <p className="mt-1 text-sm text-base-content/70">GPA: {edu.grade}</p>
-                                                )}
+                                                )} 
                                             </div>
                                         ))}
                                     </div>
