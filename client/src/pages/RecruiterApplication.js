@@ -348,30 +348,33 @@ const RecruiterApplication = () => {
         }
 
         // Filter by keywords (skills, experience, education)
-        // Skills filter
+        // Skills filter - search directly in candidate's resume skills
         if (keywordFilters.skills.length > 0) {
-            const hasSkills = app.resumeId?.Skills?.some(skill => 
-                keywordFilters.skills.some(keyword => 
-                    skill.toLowerCase().includes(keyword)
-                )
+            // Check if the resume has skills array
+            if (!app.resumeId?.Skills || !Array.isArray(app.resumeId?.Skills)) {
+                return false;
+            }
+            
+            // Check if at least one of the searched skills is present in the resume
+            const candidateSkills = app.resumeId.Skills.map(skill => skill.toLowerCase());
+            const hasSkill = keywordFilters.skills.some(keyword => 
+                candidateSkills.some(skill => skill.includes(keyword))
             );
             
-            // Also check job post's missingSkills field to see if the keywords appear there
-            const missingSkillsText = (app.missingSkills || '').toLowerCase();
-            const missingSkillsMatch = keywordFilters.skills.some(keyword => 
-                missingSkillsText.includes(keyword)
-            );
-            
-            if (!hasSkills && !missingSkillsMatch) {
+            if (!hasSkill) {
                 return false;
             }
         }
         
-        // Experience filter
+        // Experience filter - search in candidate's resume experience fields
         if (keywordFilters.experience.length > 0) {
-            // Check in experience title and company and description
-            const experiences = app.resumeId?.Experience || [];
-            const hasExperience = experiences.some(exp => {
+            // Check if resume has experience array
+            if (!app.resumeId?.Experience || !Array.isArray(app.resumeId?.Experience)) {
+                return false;
+            }
+            
+            // Check if any experience entry contains the keywords
+            const hasExperience = app.resumeId.Experience.some(exp => {
                 const title = (exp.Title || exp.position || '').toLowerCase();
                 const company = (exp.Company || exp.company || '').toLowerCase();
                 const description = (exp.description || '').toLowerCase();
@@ -386,16 +389,21 @@ const RecruiterApplication = () => {
             }
         }
         
-        // Education filter
+        // Education filter - search in candidate's resume education fields
         if (keywordFilters.education.length > 0) {
-            // Check in education degree and university
-            const educations = app.resumeId?.Education || [];
-            const hasEducation = educations.some(edu => {
+            // Check if resume has education array
+            if (!app.resumeId?.Education || !Array.isArray(app.resumeId?.Education)) {
+                return false;
+            }
+            
+            // Check if any education entry contains the keywords
+            const hasEducation = app.resumeId.Education.some(edu => {
                 const degree = (edu.Degree || edu.degree || '').toLowerCase();
                 const university = (edu.University || edu.institution || '').toLowerCase();
+                const location = (edu.Location || edu.location || '').toLowerCase();
                 
                 return keywordFilters.education.some(keyword => 
-                    degree.includes(keyword) || university.includes(keyword)
+                    degree.includes(keyword) || university.includes(keyword) || location.includes(keyword)
                 );
             });
             
