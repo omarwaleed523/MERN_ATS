@@ -139,7 +139,7 @@ const RecruiterApplication = () => {
             setProcessingBulkAction(true);
             
             // Call the bulk update API
-            await axios.put('http://localhost:5000/api/applications/bulk-status-update', {
+            const result = await axios.put('http://localhost:5000/api/applications/bulk-status-update', {
                 applicationIds: selectedApplications,
                 status: bulkStatus
             });
@@ -160,11 +160,20 @@ const RecruiterApplication = () => {
             setShowBulkStatusModal(false);
             setBulkStatus('');
 
-            setNotification({
-                show: true,
-                message: `Updated ${selectedApplications.length} application(s) to "${bulkStatus}"`,
-                type: 'success'
-            });
+            // Check if there were any email failures
+            if (result.data.emailErrors && result.data.emailErrors.length > 0) {
+                setNotification({
+                    show: true,
+                    message: `Status updated, but ${result.data.emailErrors.length} email(s) failed to send. The system will retry sending emails automatically.`,
+                    type: 'warning'
+                });
+            } else {
+                setNotification({
+                    show: true,
+                    message: `Updated ${selectedApplications.length} application(s) to "${bulkStatus}"`,
+                    type: 'success'
+                });
+            }
             setTimeout(() => setNotification({ show: false }), 3000);
         } catch (err) {
             console.error('Error updating application statuses in bulk:', err);

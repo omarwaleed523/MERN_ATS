@@ -8,13 +8,16 @@ const createTransporter = async () => {
   // First, check if we have real email credentials
   if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
     try {
-      // Try to create a real email transporter
+      // Try to create a real email transporter with extended timeout
       const realTransporter = nodemailer.createTransport({
         service: process.env.EMAIL_SERVICE || 'gmail',
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASSWORD
-        }
+        },
+        connectionTimeout: 60000, // 60 seconds connection timeout
+        greetingTimeout: 30000,   // 30 seconds greeting timeout
+        socketTimeout: 60000      // 60 seconds socket timeout
       });
       
       // Verify connection
@@ -40,7 +43,9 @@ const createTransporter = async () => {
       auth: {
         user: testAccount.user,
         pass: testAccount.pass
-      }
+      },
+      connectionTimeout: 30000, // 30 seconds timeout
+      greetingTimeout: 15000
     });
     
     console.log('Ethereal Email test account created successfully');
@@ -427,12 +432,17 @@ The Recruitment Team at ${data.company}
 };
 
 /**
- * Send application status notification email
+ * Send application status notification email with retries
  * @param {Object} application - The application object with populated relations
  * @param {string} previousStatus - The previous status, used for conditional notifications
  * @returns {Promise<boolean>} - Success status of email sending
  */
 const sendApplicationStatusEmail = async (application, previousStatus) => {
+  // Maximum number of retry attempts
+  const MAX_RETRIES = 3;
+  // Delay between retries in milliseconds (starting with 1s, then 2s, then 4s - exponential backoff)
+  const BASE_RETRY_DELAY = 1000;
+  
   try {
     // Ensure application has populated relations
     if (!application.userId || !application.jobPostId) {
@@ -508,28 +518,127 @@ const sendApplicationStatusEmail = async (application, previousStatus) => {
       // Can add HTML version here if needed
     };
 
-    // Send email
-    const info = await emailService.transporter.sendMail(mailOptions);
-    
-    if (emailService.isTest) {
-      console.log('Email sent to test account (Ethereal Email):');
-      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
-      console.log('To view this email, go to https://ethereal.email/login');
-      console.log(`Username: ${emailService.testAccount.user}`);
-      console.log(`Password: ${emailService.testAccount.pass}`);
-    } else {
-      console.log(`Email sent for application status change to ${application.status}: ${info.messageId}`);
+    // Implement retry logic for sending emails
+    let lastError = null;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        // Send email
+        const info = await emailService.transporter.sendMail(mailOptions);
+        
+        if (emailService.isTest) {
+          console.log('Email sent to test account (Ethereal Email):');
+          console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+          console.log('To view this email, go to https://ethereal.email/login');
+          console.log(`Username: ${emailService.testAccount.user}`);
+          console.log(`Password: ${emailService.testAccount.pass}`);
+        } else {
+          console.log(`Email sent for application status change to ${application.status}: ${info.messageId}`);
+        }
+        
+        return true; // Success, exit the retry loop
+      } catch (error) {
+        lastError = error;
+        console.error(`Error sending email (attempt ${attempt + 1}/${MAX_RETRIES}):`, error.message);
+        
+        // Check if we should retry
+        if (attempt < MAX_RETRIES - 1) {
+          // Calculate delay with exponential backoff
+          const delay = BASE_RETRY_DELAY * Math.pow(2, attempt);
+          console.log(`Retrying in ${delay / 1000} seconds...`);
+          
+          // Wait before next attempt
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          // If this was a connection error, recreate the transporter
+          if (error.code === 'ESOCKET' || error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') {
+            console.log('Connection issue detected, recreating email transporter...');
+            await initializeEmailService();
+          }
+        }
+      }
     }
     
-    return true;
+    // If we get here, all retry attempts failed
+    console.error(`Failed to send email after ${MAX_RETRIES} attempts:`, lastError);
+    throw lastError; // Re-throw to be caught by the outer try/catch
   } catch (error) {
     console.error('Error sending application status email:', error);
-    // Log the error details for debugging but still return true to update notification status in database
-    // This is a fallback approach - we don't want to block the application flow if emails fail
-    return true;
+    
+    // Log specific details for connection errors
+    if (error.code === 'ESOCKET' || error.code === 'ETIMEDOUT') {
+      console.error(`Connection error (${error.code}) to ${error.address}:${error.port}`);
+    }
+    
+    return false; // Return false to indicate failure
   }
 };
 
+// Add a queue for failed emails to retry later
+const failedEmailQueue = [];
+
+// Function to add a failed email to the queue
+const addToEmailQueue = (application, previousStatus) => {
+  failedEmailQueue.push({
+    application,
+    previousStatus,
+    addedAt: new Date(),
+    attempts: 0
+  });
+  console.log(`Added email to retry queue for application ${application._id}. Queue size: ${failedEmailQueue.length}`);
+};
+
+// Function to process the failed email queue
+const processEmailQueue = async () => {
+  if (failedEmailQueue.length === 0) return;
+  
+  console.log(`Processing email retry queue. ${failedEmailQueue.length} emails to retry.`);
+  
+  const MAX_QUEUE_ATTEMPTS = 5;
+  
+  // Process emails in the queue
+  for (let i = 0; i < failedEmailQueue.length; i++) {
+    const item = failedEmailQueue[i];
+    
+    // Skip items that have exceeded max attempts
+    if (item.attempts >= MAX_QUEUE_ATTEMPTS) {
+      console.log(`Email for application ${item.application._id} has failed ${item.attempts} times. Removing from queue.`);
+      failedEmailQueue.splice(i, 1);
+      i--; // Adjust index after removal
+      continue;
+    }
+    
+    console.log(`Retrying email for application ${item.application._id} (attempt ${item.attempts + 1}/${MAX_QUEUE_ATTEMPTS})`);
+    
+    try {
+      // Try to send the email
+      const success = await sendApplicationStatusEmail(item.application, item.previousStatus);
+      
+      if (success) {
+        console.log(`Successfully sent queued email for application ${item.application._id}`);
+        // Remove from queue if successful
+        failedEmailQueue.splice(i, 1);
+        i--; // Adjust index after removal
+      } else {
+        // Increment attempts and keep in queue
+        item.attempts++;
+        console.log(`Failed to send queued email for application ${item.application._id}. Will retry later.`);
+      }
+    } catch (error) {
+      // Increment attempts and keep in queue
+      item.attempts++;
+      console.error(`Error processing queued email for application ${item.application._id}:`, error);
+    }
+    
+    // Add a small delay between processing queue items to avoid overwhelming the email server
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+};
+
+// Set up queue processing interval (every 5 minutes)
+setInterval(processEmailQueue, 5 * 60 * 1000);
+
 module.exports = {
-  sendApplicationStatusEmail
+  sendApplicationStatusEmail,
+  addToEmailQueue,
+  processEmailQueue
 };

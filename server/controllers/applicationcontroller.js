@@ -583,7 +583,7 @@ const updateMultipleApplicationStatus = async (req, res) => {
             success: 0,
             failed: 0,
             emailsSent: 0,
-            errors: []
+            emailErrors: [] // Track applications with email failures
         };
 
         // Process each application
@@ -678,10 +678,35 @@ const updateMultipleApplicationStatus = async (req, res) => {
                         // Save the updated application with notification record
                         await application.save();
                         results.emailsSent++;
+                    } else {
+                        // If email failed, add to retry queue
+                        addToEmailQueue(application, previousStatus);
+                        
+                        // Record that notification attempt failed
+                        if (!application.notificationsSent) {
+                            application.notificationsSent = [];
+                        }
+                        
+                        application.notificationsSent.push({
+                            status,
+                            sentAt: new Date(),
+                            successful: false
+                        });
+                        
+                        // Save the update about failed notification
+                        await application.save();
+                        
+                        // Track the application ID with email failure
+                        results.emailErrors.push(applicationId);
                     }
                 } catch (emailError) {
                     console.error(`Error sending status change email for application ${applicationId}:`, emailError);
-                    // Continue with the next application even if email sending fails
+                    
+                    // Add to retry queue
+                    addToEmailQueue(application, previousStatus);
+                    
+                    // Track the application ID with email failure
+                    results.emailErrors.push(applicationId);
                 }
 
                 results.success++;
@@ -692,9 +717,15 @@ const updateMultipleApplicationStatus = async (req, res) => {
             }
         }
 
+        // Include failed emails in the response
+        const emailFailureMessage = results.emailErrors.length > 0 
+            ? `${results.emailErrors.length} email(s) failed to send and will be retried automatically.` 
+            : '';
+
         res.status(200).json({
-            message: `Bulk update completed: ${results.success} successful, ${results.failed} failed, ${results.emailsSent} emails sent`,
-            results
+            message: `Bulk update completed: ${results.success} successful, ${results.failed} failed, ${results.emailsSent} emails sent. ${emailFailureMessage}`,
+            results,
+            emailErrors: results.emailErrors
         });
     } catch (error) {
         console.error('Error in bulk application status update:', error);
