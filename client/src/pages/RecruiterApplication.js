@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
 import { FiFilter, FiSearch, FiChevronDown, FiStar, FiMail, FiPhone, FiDownload, FiCheck, FiX, FiClock, FiFileText, FiBriefcase, FiRefreshCw, FiEdit2, FiSave, FiAlertCircle, FiCalendar, FiClock as FiClockO, FiEdit3, FiUserCheck, FiUserX, FiMessageSquare, FiCheckCircle, FiAlertTriangle, FiCheckSquare, FiTag, FiPlus, FiSliders, FiBookOpen, FiBriefcase as FiBriefcase2 } from 'react-icons/fi';
 
 const RecruiterApplication = () => {
+    const navigate = useNavigate();
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -1517,8 +1519,13 @@ const RecruiterApplication = () => {
                                                     <button className="btn btn-primary btn-outline">
                                                         <FiMail className="mr-2" /> Email Candidate
                                                     </button>
-                                                    <button className="btn btn-primary">
-                                                        <FiStar className="mr-2" /> Schedule Interview
+                                                    <button 
+                                                        className="btn btn-primary"
+                                                        onClick={() => navigate('/recruiterinterviews', { 
+                                                            state: { applicationId: activeApplication._id }
+                                                        })}
+                                                    >
+                                                        <FiCalendar className="mr-2" /> Schedule Interview
                                                     </button>
                                                 </div>
                                             </div>

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { UserContext } from '../context/UserContext';
-import { FiEye, FiBriefcase, FiUserCheck, FiCalendar, FiTrash2 } from 'react-icons/fi';
+import { FiEye, FiBriefcase, FiUserCheck, FiCalendar, FiTrash2, FiEdit } from 'react-icons/fi';
+import InterviewCard from '../Components/InterviewCard';
 
 const AdminInterviewManagement = () => {
   const { user } = useContext(UserContext);
@@ -232,100 +233,128 @@ const AdminInterviewManagement = () => {
           <span className="loading loading-spinner loading-lg"></span>
         </div>
       ) : (
-        <div className="overflow-x-auto bg-base-200 rounded-lg shadow">
-          <table className="table w-full">
-            <thead>
-              <tr>
-                <th>Candidate</th>
-                <th>Job Title</th>
-                <th>Company</th>
-                <th>Interview Date</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredInterviews.length > 0 ? (
-                filteredInterviews.map((interview) => (
-                  <tr key={interview._id}>
-                    <td>
-                      {interview.candidateId && interview.candidateId.name ? (
-                        <div className="flex items-center gap-2">
-                          <FiUserCheck className="text-secondary" />
-                          <span>{interview.candidateId.name}</span>
-                        </div>
-                      ) : (
-                        <span className="italic text-opacity-60">Unknown Candidate</span>
-                      )}
-                    </td>
-                    <td>
-                      {interview.jobPostId && interview.jobPostId.jobTitle ? (
-                        <div className="flex items-center gap-2">
-                          <FiBriefcase className="text-primary" />
-                          <span>{interview.jobPostId.jobTitle}</span>
-                        </div>
-                      ) : (
-                        <span className="italic text-opacity-60">Unknown Job</span>
-                      )}
-                    </td>
-                    <td>
-                      {interview.jobPostId && interview.jobPostId.company ? (
-                        <span>{interview.jobPostId.company}</span>
-                      ) : (
-                        <span className="italic text-opacity-60">Unknown</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <FiCalendar className="text-info" />
-                        <span>{formatDate(interview.scheduledDate)}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="badge badge-outline">
-                        {interview.interviewType || 'General'}
-                      </span>
-                    </td>
-                    <td>
-                      <span 
-                        className={`badge ${
-                          interview.status === 'Completed' ? 'badge-success' :
-                          interview.status === 'Scheduled' ? 'badge-info' :
-                          interview.status === 'Canceled' ? 'badge-error' :
-                          interview.status === 'Rescheduled' ? 'badge-warning' :
-                          'badge-secondary'
-                        }`}
-                      >
-                        {interview.status}
-                      </span>
-                    </td>
-                    <td className="flex gap-2">
-                      <button
-                        className="btn btn-xs btn-info"
-                        onClick={() => handleStatusClick(interview)}
-                        title="Change Status"
-                      >
-                        <FiEye />
-                      </button>
-                      <button
-                        className="btn btn-xs btn-error"
-                        onClick={() => handleDeleteClick(interview)}
-                        title="Delete Interview"
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
+        <>
+          {/* Table view on larger screens */}
+          <div className="hidden lg:block overflow-x-auto bg-base-200 rounded-lg shadow">
+            <table className="table w-full">
+              <thead>
                 <tr>
-                  <td colSpan="7" className="text-center py-4">No interviews found</td>
+                  <th>Candidate</th>
+                  <th>Job Title</th>
+                  <th>Company</th>
+                  <th>Interview Date</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredInterviews.length > 0 ? (
+                  filteredInterviews.map((interview) => (
+                    <tr key={interview._id}>
+                      <td>
+                        {interview.candidateId && interview.candidateId.name ? (
+                          <div className="flex items-center gap-2">
+                            <FiUserCheck className="text-secondary" />
+                            <span>{interview.candidateId.name}</span>
+                          </div>
+                        ) : (
+                          <span className="italic text-opacity-60">Unknown Candidate</span>
+                        )}
+                      </td>
+                      <td>
+                        {interview.jobPostId && interview.jobPostId.jobTitle ? (
+                          <div className="flex items-center gap-2">
+                            <FiBriefcase className="text-primary" />
+                            <span>{interview.jobPostId.jobTitle}</span>
+                          </div>
+                        ) : (
+                          <span className="italic text-opacity-60">Unknown Job</span>
+                        )}
+                      </td>
+                      <td>
+                        {interview.jobPostId && interview.jobPostId.company ? (
+                          <span>{interview.jobPostId.company}</span>
+                        ) : (
+                          <span className="italic text-opacity-60">Unknown</span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <FiCalendar className="text-info" />
+                          <span>{formatDate(interview.scheduledDate)}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge badge-outline">
+                          {interview.interviewType || 'General'}
+                        </span>
+                      </td>
+                      <td>
+                        <span 
+                          className={`badge ${
+                            interview.status === 'Completed' ? 'badge-success' :
+                            interview.status === 'Scheduled' ? 'badge-info' :
+                            interview.status === 'Canceled' ? 'badge-error' :
+                            interview.status === 'Rescheduled' ? 'badge-warning' :
+                            'badge-secondary'
+                          }`}
+                        >
+                          {interview.status}
+                        </span>
+                      </td>
+                      <td className="flex gap-2">
+                        <button
+                          className="btn btn-xs btn-info"
+                          onClick={() => handleStatusClick(interview)}
+                          title="Change Status"
+                        >
+                          <FiEye />
+                        </button>
+                        <button
+                          className="btn btn-xs btn-error"
+                          onClick={() => handleDeleteClick(interview)}
+                          title="Delete Interview"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="text-center py-4">No interviews found</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Card view on smaller screens */}
+          <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredInterviews.length > 0 ? (
+              filteredInterviews.map((interview) => (
+                <InterviewCard 
+                  key={interview._id} 
+                  interview={interview} 
+                  onEdit={() => handleStatusClick(interview)} 
+                  onDelete={() => handleDeleteClick(interview)}
+                  onClick={() => handleStatusClick(interview)}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8 bg-base-200 rounded-lg">
+                <div className="text-4xl text-base-content/20 mb-4">
+                  <FiCalendar className="inline-block" />
+                </div>
+                <h3 className="text-lg font-medium">No interviews found</h3>
+                <p className="text-base-content/60 mt-1">
+                  Try adjusting your filters to see more results
+                </p>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {isStatusModalOpen && selectedInterview && (

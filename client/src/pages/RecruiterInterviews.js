@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { UserContext } from '../context/UserContext';
 import InterviewCard from '../Components/InterviewCard';
+import { useLocation } from 'react-router-dom';
 import { 
   FiCalendar, FiPlus, FiFilter, FiSearch, FiX, FiSave, 
   FiChevronDown, FiCheck, FiClock, FiEdit, FiTrash2, 
@@ -10,6 +11,7 @@ import {
 
 const RecruiterInterviews = () => {
   const { user } = useContext(UserContext);
+  const location = useLocation();
   const [interviews, setInterviews] = useState([]);
   const [filteredInterviews, setFilteredInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -122,6 +124,17 @@ const RecruiterInterviews = () => {
       fetchApplications();
     }
   }, [user]);
+
+  // Check for applicationId passed from RecruiterApplication page
+  useEffect(() => {
+    if (location.state?.applicationId && applications.length > 0) {
+      // If an applicationId was passed via navigation state, open the interview modal with that application selected
+      const selectedApplication = applications.find(app => app._id === location.state.applicationId);
+      if (selectedApplication) {
+        handleOpenInterviewModal(selectedApplication);
+      }
+    }
+  }, [location.state, applications]);
 
   // Apply filters when they change
   useEffect(() => {
@@ -340,12 +353,20 @@ const RecruiterInterviews = () => {
     if (!selectedInterview) return;
     
     try {
+      // Include the x-auth-token in the headers
       await axios.delete(
         `http://localhost:5000/api/interviews/${selectedInterview._id}`,
-        { headers: { 'x-auth-token': user.token } }
+        { 
+          headers: { 
+            'x-auth-token': user.token,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
       
+      // Update local state to remove the deleted interview
       setInterviews(interviews.filter(interview => interview._id !== selectedInterview._id));
+      setFilteredInterviews(filteredInterviews.filter(interview => interview._id !== selectedInterview._id));
       setShowDeleteModal(false);
       setSelectedInterview(null);
       
@@ -570,6 +591,8 @@ const RecruiterInterviews = () => {
                 interview={interview}
                 userRole="Recruiter"
                 onClick={() => handleInterviewCardClick(interview)}
+                onEdit={() => openEditModal(interview)}
+                onDelete={() => openDeleteModal(interview)}
               />
             ))
           )}

@@ -14,8 +14,8 @@ exports.createInterview = async (req, res) => {
             return res.status(404).json({ message: 'Application not found' });
         }
 
-        // Create new interview
-        const interview = new Interview({
+        // Create new interview object with proper handling of location/videoConferenceLink
+        const interviewData = {
             applicationId,
             candidateId: application.userId._id,
             recruiterId: req.user.id, // From auth middleware
@@ -23,12 +23,21 @@ exports.createInterview = async (req, res) => {
             interviewType,
             scheduledDate,
             duration,
-            location,
             description,
             attendees: attendees || [],
-            videoConferenceLink
-        });
+        };
 
+        // Set location based on what was provided
+        if (videoConferenceLink) {
+            interviewData.videoConferenceLink = videoConferenceLink;
+            interviewData.location = 'Virtual Interview'; // Default location for virtual interviews
+        } else if (location) {
+            interviewData.location = location;
+        } else {
+            return res.status(400).json({ message: 'Either location or videoConferenceLink must be provided' });
+        }
+
+        const interview = new Interview(interviewData);
         await interview.save();
 
         // Update application status if it's not already in interview stage
@@ -170,11 +179,18 @@ exports.updateInterview = async (req, res) => {
         if (interviewType) interview.interviewType = interviewType;
         if (scheduledDate) interview.scheduledDate = scheduledDate;
         if (duration) interview.duration = duration;
-        if (location) interview.location = location;
         if (description) interview.description = description;
         if (attendees) interview.attendees = attendees;
-        if (videoConferenceLink) interview.videoConferenceLink = videoConferenceLink;
         if (status) interview.status = status;
+        
+        // Handle location and videoConferenceLink properly
+        if (videoConferenceLink) {
+            interview.videoConferenceLink = videoConferenceLink;
+            interview.location = 'Virtual Interview'; // Default location for virtual interviews
+        } else if (location) {
+            interview.location = location;
+            interview.videoConferenceLink = ''; // Clear video link if physical location is provided
+        }
         
         // Handle feedback update
         if (feedback) {
