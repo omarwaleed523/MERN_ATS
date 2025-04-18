@@ -2,6 +2,7 @@ const Interview = require('../models/Interview');
 const Application = require('../models/Application');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { sendApplicationStatusEmail } = require('../utils/emailNotifications');
 
 // Create a new interview
 exports.createInterview = async (req, res) => {
@@ -9,7 +10,10 @@ exports.createInterview = async (req, res) => {
         const { applicationId, interviewType, scheduledDate, duration, location, description, attendees, videoConferenceLink } = req.body;
 
         // Verify the application exists
-        const application = await Application.findById(applicationId).populate('jobPostId').populate('userId');
+        const application = await Application.findById(applicationId)
+            .populate('jobPostId')
+            .populate('userId');
+            
         if (!application) {
             return res.status(404).json({ message: 'Application not found' });
         }
@@ -40,7 +44,12 @@ exports.createInterview = async (req, res) => {
         const interview = new Interview(interviewData);
         await interview.save();
 
+        // Get recruiter info for the email
+        const recruiter = await User.findById(req.user.id).select('name email phonenumber company');
+
         // Update application status if it's not already in interview stage
+        const previousStatus = application.status;
+        
         if (application.status !== 'Interview Scheduled') {
             application.status = 'Interview Scheduled';
             
@@ -49,14 +58,55 @@ exports.createInterview = async (req, res) => {
                 application.statusHistory = [];
             }
             
+            // Format interview details for inclusion in status notes and email
+            const interviewDateFormatted = new Date(scheduledDate).toLocaleString();
+            const locationInfo = videoConferenceLink ? 
+                `Virtual interview via ${videoConferenceLink}` : 
+                `Location: ${location}`;
+            
+            // Add interview details to nextSteps for email notification
+            application.nextSteps = `
+Interview Type: ${interviewType}
+Date and Time: ${interviewDateFormatted}
+Duration: ${duration} minutes
+${locationInfo}
+${description ? `Details: ${description}` : ''}
+${attendees && attendees.length > 0 ? `Other Attendees: ${attendees.join(', ')}` : ''}
+            `.trim();
+            
             application.statusHistory.push({
                 status: 'Interview Scheduled',
                 changedAt: new Date(),
                 changedBy: req.user.id,
-                notes: `Interview scheduled for ${new Date(scheduledDate).toLocaleString()}`
+                notes: `Interview scheduled for ${interviewDateFormatted}. ${locationInfo}`
             });
             
             await application.save();
+            
+            // Send email notification
+            try {
+                // Add recruiter information to the application object for the email
+                application.jobPostId.recruiter = recruiter;
+                
+                // Send the email notification
+                await sendApplicationStatusEmail(application, previousStatus);
+                
+                // Update the application to track that notification was sent
+                if (!application.notificationsSent) {
+                    application.notificationsSent = [];
+                }
+                
+                application.notificationsSent.push({
+                    status: 'Interview Scheduled',
+                    sentAt: new Date(),
+                    sentBy: req.user.id
+                });
+                
+                await application.save();
+            } catch (emailError) {
+                console.error('Error sending interview notification email:', emailError);
+                // Continue execution, don't fail if email fails
+            }
         }
 
         res.status(201).json(interview);
@@ -175,6 +225,9 @@ exports.updateInterview = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized to update this interview' });
         }
 
+        // Track if this is a reschedule (date/time change)
+        const isRescheduled = scheduledDate && new Date(scheduledDate).getTime() !== new Date(interview.scheduledDate).getTime();
+
         // Update fields
         if (interviewType) interview.interviewType = interviewType;
         if (scheduledDate) interview.scheduledDate = scheduledDate;
@@ -202,11 +255,21 @@ exports.updateInterview = async (req, res) => {
         
         await interview.save();
 
-        // If status changed to Completed, update the application status
-        if (status === 'Completed') {
-            const application = await Application.findById(interview.applicationId);
-            if (application && application.status !== 'Interviewed') {
+        // Get the associated application
+        const application = await Application.findById(interview.applicationId)
+            .populate('jobPostId')
+            .populate('userId');
+
+        if (application) {
+            // Get recruiter info for the email
+            const recruiter = await User.findById(req.user.id).select('name email phonenumber company');
+            let previousStatus = application.status;
+            let shouldSendEmail = false;
+
+            // If status changed to Completed, update the application status
+            if (status === 'Completed' && application.status !== 'Interviewed') {
                 application.status = 'Interviewed';
+                shouldSendEmail = true;
                 
                 // Add to status history
                 if (!application.statusHistory) {
@@ -219,8 +282,75 @@ exports.updateInterview = async (req, res) => {
                     changedBy: req.user.id,
                     notes: feedback?.notes || 'Interview completed'
                 });
+            }
+            // If interview was rescheduled, update application with new details
+            else if (isRescheduled) {
+                // Set application status to Rescheduled if it's not already
+                if (application.status !== 'Interview Rescheduled') {
+                    previousStatus = application.status;
+                    application.status = 'Interview Rescheduled';
+                    shouldSendEmail = true;
+                    
+                    // Add to status history
+                    if (!application.statusHistory) {
+                        application.statusHistory = [];
+                    }
+                    
+                    application.statusHistory.push({
+                        status: 'Interview Rescheduled',
+                        changedAt: new Date(),
+                        changedBy: req.user.id,
+                        notes: `Interview rescheduled to ${new Date(scheduledDate).toLocaleString()}`
+                    });
+                }
                 
+                // Format interview details for inclusion in status notes and email
+                const interviewDateFormatted = new Date(scheduledDate).toLocaleString();
+                const locationInfo = interview.videoConferenceLink ? 
+                    `Virtual interview via ${interview.videoConferenceLink}` : 
+                    `Location: ${interview.location}`;
+                
+                // Update nextSteps with new interview details
+                application.nextSteps = `
+Interview Type: ${interview.interviewType}
+Date and Time: ${interviewDateFormatted}
+Duration: ${interview.duration} minutes
+${locationInfo}
+${interview.description ? `Details: ${interview.description}` : ''}
+${interview.attendees && interview.attendees.length > 0 ? `Other Attendees: ${interview.attendees.join(', ')}` : ''}
+                `.trim();
+                
+                shouldSendEmail = true;
+            }
+            
+            // Save application changes
+            if (shouldSendEmail || previousStatus !== application.status) {
                 await application.save();
+                
+                // Send email notification
+                try {
+                    // Add recruiter information to the application object for the email
+                    application.jobPostId.recruiter = recruiter;
+                    
+                    // Send the email notification
+                    await sendApplicationStatusEmail(application, previousStatus);
+                    
+                    // Update the application to track that notification was sent
+                    if (!application.notificationsSent) {
+                        application.notificationsSent = [];
+                    }
+                    
+                    application.notificationsSent.push({
+                        status: application.status,
+                        sentAt: new Date(),
+                        sentBy: req.user.id
+                    });
+                    
+                    await application.save();
+                } catch (emailError) {
+                    console.error('Error sending interview update notification email:', emailError);
+                    // Continue execution, don't fail if email fails
+                }
             }
         }
 
@@ -245,6 +375,79 @@ exports.deleteInterview = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized to delete this interview' });
         }
         
+        // Check if there's an associated application to update
+        const application = await Application.findById(interview.applicationId)
+            .populate('jobPostId')
+            .populate('userId');
+            
+        if (application) {
+            // Get recruiter info for the email
+            const recruiter = await User.findById(req.user.id).select('name email phonenumber company');
+            const previousStatus = application.status;
+            
+            // Check if there are other interviews for this application
+            const otherInterviews = await Interview.countDocuments({ 
+                applicationId: interview.applicationId,
+                _id: { $ne: interview._id }
+            });
+            
+            // If no other interviews and the application is in interview stage, update status
+            if (otherInterviews === 0 && 
+                (application.status === 'Interview Scheduled' || 
+                 application.status === 'Interview Rescheduled')) {
+                
+                application.status = 'Interview Cancelled';
+                
+                // Add to status history
+                if (!application.statusHistory) {
+                    application.statusHistory = [];
+                }
+                
+                application.statusHistory.push({
+                    status: 'Interview Cancelled',
+                    changedAt: new Date(),
+                    changedBy: req.user.id,
+                    notes: `Interview cancelled by ${req.user.role === 'Administrator' ? 'administrator' : 'recruiter'}`
+                });
+                
+                // Add note about the canceled interview
+                application.nextSteps = `
+The scheduled interview has been cancelled. 
+${interview.interviewType} interview that was scheduled for ${new Date(interview.scheduledDate).toLocaleString()} has been cancelled.
+
+You will be notified if a new interview is scheduled.
+                `.trim();
+                
+                await application.save();
+                
+                // Send email notification about cancelled interview
+                try {
+                    // Add recruiter information to the application object for the email
+                    application.jobPostId.recruiter = recruiter;
+                    
+                    // Send the email notification
+                    await sendApplicationStatusEmail(application, previousStatus);
+                    
+                    // Update the application to track that notification was sent
+                    if (!application.notificationsSent) {
+                        application.notificationsSent = [];
+                    }
+                    
+                    application.notificationsSent.push({
+                        status: 'Interview Cancelled',
+                        sentAt: new Date(),
+                        sentBy: req.user.id
+                    });
+                    
+                    await application.save();
+                } catch (emailError) {
+                    console.error('Error sending interview cancellation notification email:', emailError);
+                    // Continue execution, don't fail if email fails
+                }
+            }
+        }
+        
+        // Delete the interview
         await Interview.findByIdAndDelete(req.params.id);
         
         res.json({ message: 'Interview deleted successfully' });

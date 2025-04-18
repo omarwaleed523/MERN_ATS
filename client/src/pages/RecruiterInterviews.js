@@ -264,16 +264,21 @@ const RecruiterInterviews = () => {
       
       setInterviews([...interviews, response.data]);
       setShowInterviewModal(false);
+      
+      // Get candidate name for more detailed notification
+      const selectedApplication = applications.find(app => app._id === formData.applicationId);
+      const candidateName = selectedApplication?.userId?.name || 'Candidate';
+      
       setNotification({
         show: true,
-        message: 'Interview scheduled successfully',
+        message: `Interview scheduled successfully for ${candidateName}. Email notification has been sent to the candidate.`,
         type: 'success'
       });
       
-      // Hide notification after 3 seconds
+      // Hide notification after 5 seconds (increased from 3)
       setTimeout(() => {
         setNotification({ show: false });
-      }, 3000);
+      }, 5000);
       
     } catch (error) {
       console.error('Error scheduling interview:', error);
