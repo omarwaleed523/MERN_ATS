@@ -25,6 +25,12 @@ router.get('/users', adminController.getAllUsers);
 router.put('/users/:userId', adminController.updateUser);
 router.delete('/users/:userId', adminController.deleteUser);
 
+// Interview management (new routes)
+router.get('/interviews', adminController.getAllInterviews);
+router.get('/interviews/:id', adminController.getInterviewById);
+router.put('/interviews/:id', adminController.updateInterview);
+router.delete('/interviews/:id', adminController.deleteInterview);
+
 // Database schemas
 router.get('/schemas', adminController.getSchemas);
 

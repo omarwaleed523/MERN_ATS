@@ -124,19 +124,25 @@ const Navbar = () => {
                     {isMenuOpen && (
                         <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
                             {user.role === 'Recruiter' && (
-                                <li><Link to='/recruiterhome' className="button">Recruiter Dashboard</Link></li>
+                                <>
+                                    <li><Link to='/recruiterhome' className="button">Recruiter Dashboard</Link></li>
+                                    <li><Link to='/recruiterapplications' className="button">Recruiter Applications</Link></li>
+                                    <li><Link to='/recruiterinterviews' className="button">Interviews</Link></li>
+                                </>
                             )}
                             {user.role === 'Candidate' && (
                                 <>
                                     <li><Link to='/candidatehome' className="button">Job Posts</Link></li>
                                     <li><Link to='/parseresume' className="button">Parse Resume</Link></li>
                                     <li><Link to={`/applications/${Cookies.get('userId')}`} className="button">Applications</Link></li>
+                                    <li><Link to='/candidateinterviews' className="button">Interviews</Link></li>
                                 </>
                             )}
                             {user.role === 'Administrator' && (
                                 <>
                                     <li><Link to='/admin/dashboard' className="button">Admin Dashboard</Link></li>
                                     <li><Link to='/admin/users' className="button">Manage Users</Link></li>
+                                    <li><Link to='/admin/interviews' className="button">Interviews</Link></li>
                                 </>
                             )}
                         </ul>
@@ -151,6 +157,7 @@ const Navbar = () => {
                         <>
                             <li><Link to='/recruiterhome' className="button">Recruiter Dashboard</Link></li>
                             <li><Link to='/recruiterapplications' className="button">Recruiter Applications</Link></li>
+                            <li><Link to='/recruiterinterviews' className="button">Interviews</Link></li>
                         </>
                     )}
                     {user.role === 'Candidate' && (
@@ -158,12 +165,14 @@ const Navbar = () => {
                             <li><Link to='/candidatehome' className="button">Job Posts</Link></li>
                             <li><Link to='/parseresume' className="button">Parse Resume</Link></li>
                             <li><Link to={`/applications/${Cookies.get('userId')}`} className="button">Applications</Link></li>
+                            <li><Link to='/candidateinterviews' className="button">Interviews</Link></li>
                         </>
                     )}
                     {user.role === 'Administrator' && (
                         <>
                             <li><Link to='/admin/dashboard' className="button">Admin Dashboard</Link></li>
                             <li><Link to='/admin/users' className="button">Manage Users</Link></li>
+                            <li><Link to='/admin/interviews' className="button">Interviews</Link></li>
                         </>
                     )}
                 </ul>

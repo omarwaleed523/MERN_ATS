@@ -21,6 +21,9 @@ import AdminUserManagement from './pages/AdminUserManagement';
 import AdminDatabaseSchemas from './pages/AdminDatabaseSchemas';
 import AdminJobManagement from './pages/AdminJobManagement';
 import AdminApplicationManagement from './pages/AdminApplicationManagement';
+import AdminInterviewManagement from './pages/AdminInterviewManagement';
+import RecruiterInterviews from './pages/RecruiterInterviews';
+import CandidateInterviews from './pages/CandidateInterviews';
 
 const App = () => (
   <>
@@ -40,6 +43,8 @@ const App = () => (
           <Route path="/addjobpost" element={<UploadJobPost />} />
           <Route path="/viewjobpost/:id" element={<Viewjobpost />} />
           <Route path='/recruiterapplications' element={<RecruiterApplication />} />
+          <Route path='/recruiterinterviews' element={<RecruiterInterviews />} />
+          <Route path='/candidateinterviews' element={<CandidateInterviews />} />
           <Route path='/manageprofile' element={<ManageProfile />} />
           
           {/* Admin Routes */}
@@ -48,6 +53,7 @@ const App = () => (
           <Route path='/admin/schemas' element={<AdminDatabaseSchemas />} />
           <Route path='/admin/jobs' element={<AdminJobManagement />} />
           <Route path='/admin/applications' element={<AdminApplicationManagement />} />
+          <Route path='/admin/interviews' element={<AdminInterviewManagement />} />
         </Routes>
       </Router>
     </UserProvider>

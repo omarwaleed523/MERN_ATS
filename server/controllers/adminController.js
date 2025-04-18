@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Jobpost = require('../models/Jobpost');
 const Application = require('../models/Application');
 const Resume = require('../models/Resume');
+const Interview = require('../models/Interview'); // Added Interview model
 const mongoose = require('mongoose');
 
 // Get system statistics for admin dashboard
@@ -354,5 +355,274 @@ exports.getActivityTimeline = async (req, res) => {
   } catch (error) {
     console.error('Error getting activity timeline:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get all interviews for admin management
+exports.getAllInterviews = async (req, res) => {
+  try {
+    // Get query parameters for filtering
+    const { 
+      status, 
+      candidate, 
+      recruiter, 
+      jobTitle, 
+      company, 
+      dateFrom, 
+      dateTo,
+      interviewType
+    } = req.query;
+
+    // Build query object
+    const query = {};
+
+    // Add filters if provided
+    if (status) query.status = status;
+    if (interviewType) query.interviewType = interviewType;
+
+    // Date range filter
+    if (dateFrom || dateTo) {
+      query.scheduledDate = {};
+      if (dateFrom) query.scheduledDate.$gte = new Date(dateFrom);
+      if (dateTo) query.scheduledDate.$lte = new Date(dateTo);
+    }
+
+    // Find all interviews with filtering
+    let interviews = await Interview.find(query)
+      .populate('candidateId', 'name email')
+      .populate('recruiterId', 'name email company')
+      .populate({
+        path: 'jobPostId',
+        select: 'jobTitle company'
+      })
+      .populate({
+        path: 'applicationId',
+        select: 'status appliedAt'
+      })
+      .sort({ scheduledDate: -1 });
+
+    // Additional filtering that requires populated fields
+    if (interviews.length > 0) {
+      if (candidate) {
+        const candidateRegex = new RegExp(candidate, 'i');
+        interviews = interviews.filter(
+          interview => interview.candidateId && 
+            (candidateRegex.test(interview.candidateId.name) || 
+             candidateRegex.test(interview.candidateId.email))
+        );
+      }
+
+      if (recruiter) {
+        const recruiterRegex = new RegExp(recruiter, 'i');
+        interviews = interviews.filter(
+          interview => interview.recruiterId && 
+            (recruiterRegex.test(interview.recruiterId.name) || 
+             recruiterRegex.test(interview.recruiterId.email))
+        );
+      }
+
+      if (jobTitle) {
+        const jobTitleRegex = new RegExp(jobTitle, 'i');
+        interviews = interviews.filter(
+          interview => interview.jobPostId && 
+            jobTitleRegex.test(interview.jobPostId.jobTitle)
+        );
+      }
+
+      if (company) {
+        const companyRegex = new RegExp(company, 'i');
+        interviews = interviews.filter(
+          interview => 
+            (interview.jobPostId && companyRegex.test(interview.jobPostId.company)) ||
+            (interview.recruiterId && interview.recruiterId.company && 
+             companyRegex.test(interview.recruiterId.company))
+        );
+      }
+    }
+
+    res.json(interviews);
+  } catch (error) {
+    console.error('Error getting interviews:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Get a specific interview by ID
+exports.getInterviewById = async (req, res) => {
+  try {
+    const interview = await Interview.findById(req.params.id)
+      .populate('candidateId', 'name email')
+      .populate('recruiterId', 'name email company')
+      .populate({
+        path: 'jobPostId',
+        select: 'jobTitle company location'
+      })
+      .populate({
+        path: 'applicationId',
+        select: 'status appliedAt resumeId'
+      });
+    
+    if (!interview) {
+      return res.status(404).json({ message: 'Interview not found' });
+    }
+
+    // If the application has a resume, populate that too
+    if (interview.applicationId && interview.applicationId.resumeId) {
+      await interview.applicationId.populate({
+        path: 'resumeId',
+        select: 'name email skills education workExperience'
+      });
+    }
+    
+    res.json(interview);
+  } catch (error) {
+    console.error('Error getting interview:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Update an interview
+exports.updateInterview = async (req, res) => {
+  try {
+    const { 
+      interviewType, 
+      scheduledDate, 
+      duration, 
+      location, 
+      description, 
+      attendees,
+      videoConferenceLink,
+      feedback,
+      status
+    } = req.body;
+
+    // Find interview first to check if it exists
+    const interview = await Interview.findById(req.params.id);
+    if (!interview) {
+      return res.status(404).json({ message: 'Interview not found' });
+    }
+
+    // Update interview fields
+    const updateFields = {
+      interviewType: interviewType || interview.interviewType,
+      scheduledDate: scheduledDate || interview.scheduledDate,
+      duration: duration || interview.duration,
+      location: location || interview.location,
+      description: description || interview.description,
+      videoConferenceLink: videoConferenceLink || interview.videoConferenceLink
+    };
+
+    // Only update arrays if they are provided
+    if (attendees) updateFields.attendees = attendees;
+    if (feedback) updateFields.feedback = feedback;
+    
+    // Update status if provided
+    if (status) {
+      updateFields.status = status;
+      
+      // If status is updated, update the application status as well
+      if (status !== interview.status) {
+        const application = await Application.findById(interview.applicationId);
+        if (application) {
+          let appStatus = application.status;
+          
+          // Map interview status to application status
+          if (status === 'Completed') appStatus = 'Interview Completed';
+          else if (status === 'Cancelled') appStatus = 'Interview Cancelled';
+          else if (status === 'No Show') appStatus = 'Interview No-Show';
+          
+          // Update application status
+          application.status = appStatus;
+          
+          // Add to status history
+          if (!application.statusHistory) {
+            application.statusHistory = [];
+          }
+          
+          application.statusHistory.push({
+            status: appStatus,
+            changedAt: new Date(),
+            changedBy: req.user.id,
+            notes: `Interview status updated to ${status}`
+          });
+          
+          await application.save();
+        }
+      }
+    }
+
+    // Update the interview
+    const updatedInterview = await Interview.findByIdAndUpdate(
+      req.params.id, 
+      updateFields,
+      { new: true, runValidators: true }
+    )
+    .populate('candidateId', 'name email')
+    .populate('recruiterId', 'name email')
+    .populate({
+      path: 'jobPostId',
+      select: 'jobTitle company'
+    })
+    .populate({
+      path: 'applicationId',
+      select: 'status appliedAt'
+    });
+
+    res.json(updatedInterview);
+  } catch (error) {
+    console.error('Error updating interview:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Delete an interview
+exports.deleteInterview = async (req, res) => {
+  try {
+    const interviewId = req.params.id;
+
+    // Find the interview first to get its application ID
+    const interview = await Interview.findById(interviewId);
+    if (!interview) {
+      return res.status(404).json({ message: 'Interview not found' });
+    }
+
+    // Delete the interview
+    await Interview.findByIdAndDelete(interviewId);
+
+    // Update the application status if necessary
+    if (interview.applicationId) {
+      const application = await Application.findById(interview.applicationId);
+      if (application && application.status.includes('Interview')) {
+        // Check if there are other interviews for this application
+        const otherInterviews = await Interview.countDocuments({ 
+          applicationId: interview.applicationId,
+          _id: { $ne: interviewId }
+        });
+
+        // If no other interviews exist, update application status
+        if (otherInterviews === 0) {
+          application.status = 'Under Review';
+          
+          // Add to status history
+          if (!application.statusHistory) {
+            application.statusHistory = [];
+          }
+          
+          application.statusHistory.push({
+            status: 'Under Review',
+            changedAt: new Date(),
+            changedBy: req.user.id,
+            notes: 'Interview cancelled by administrator'
+          });
+          
+          await application.save();
+        }
+      }
+    }
+
+    res.json({ message: 'Interview deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting interview:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

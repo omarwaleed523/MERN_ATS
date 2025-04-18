@@ -8,6 +8,7 @@ const path = require('path');
 const applicationRoutes = require('./routes/applicationroutes');
 const jobPostRoutes = require('./routes/jobpostroutes');
 const adminRoutes = require('./routes/adminRoutes');
+const interviewRoutes = require('./routes/interviewRoutes');
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use('/api/resumes', resumeRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/jobposts', jobPostRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/interviews', interviewRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;
