@@ -394,9 +394,10 @@ exports.deleteInterview = async (req, res) => {
             // If no other interviews and the application is in interview stage, update status
             if (otherInterviews === 0 && 
                 (application.status === 'Interview Scheduled' || 
-                 application.status === 'Interview Rescheduled')) {
+                 application.status === 'Interviewed')) {
                 
-                application.status = 'Interview Cancelled';
+                // Use a valid status value from the Application model enum
+                application.status = 'Under Review';
                 
                 // Add to status history
                 if (!application.statusHistory) {
@@ -404,7 +405,7 @@ exports.deleteInterview = async (req, res) => {
                 }
                 
                 application.statusHistory.push({
-                    status: 'Interview Cancelled',
+                    status: 'Under Review',
                     changedAt: new Date(),
                     changedBy: req.user.id,
                     notes: `Interview cancelled by ${req.user.role === 'Administrator' ? 'administrator' : 'recruiter'}`
@@ -434,7 +435,7 @@ You will be notified if a new interview is scheduled.
                     }
                     
                     application.notificationsSent.push({
-                        status: 'Interview Cancelled',
+                        status: 'Under Review',
                         sentAt: new Date(),
                         sentBy: req.user.id
                     });
