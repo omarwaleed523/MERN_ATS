@@ -59,7 +59,7 @@ const generateSimilarityScore = async (jobDesc, resume, jobPostData) => {
       Focus strictly on the specific requirements mentioned in the job post when identifying gaps.
       
       Return in this exact format:
-      Score: XX (numerical score based on how many of the required skills, experience, and education requirements are met)
+      Score: XX (numerical score based on how many of the required skills, experience, and education requirements are met by the candidate in the resume text above)
       
       Missing Skills: [List each missing skill on a new numbered line like "1. Skill name", "2. Skill name", etc.]
       
