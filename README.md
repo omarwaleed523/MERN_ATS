@@ -282,9 +282,7 @@ If you encounter any issues or have questions:
 - [ ] Advanced AI matching algorithms
 - [ ] Multi-language support
 
-## 👨‍💻 Authors
 
-- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
 
 ## 🙏 Acknowledgments
 
