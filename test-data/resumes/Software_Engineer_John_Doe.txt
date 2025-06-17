@@ -1,0 +1,69 @@
+JOHN DOE
+Software Engineer
+
+Email: john.doe@email.com
+Phone: (555) 123-4567
+LinkedIn: linkedin.com/in/johndoe
+Location: San Francisco, CA
+
+PROFESSIONAL SUMMARY
+Experienced Software Engineer with 5+ years of expertise in full-stack development, specializing in React.js, Node.js, and MongoDB. Proven track record of delivering scalable web applications and leading cross-functional teams. Strong background in Agile methodologies and DevOps practices.
+
+TECHNICAL SKILLS
+Programming Languages: JavaScript, TypeScript, Python, Java, C++
+Frontend: React.js, Vue.js, HTML5, CSS3, Tailwind CSS, Bootstrap
+Backend: Node.js, Express.js, Spring Boot, Django
+Databases: MongoDB, PostgreSQL, MySQL, Redis
+Cloud & DevOps: AWS, Docker, Kubernetes, Jenkins, Git
+Testing: Jest, Cypress, Selenium, Mocha
+Other: REST APIs, GraphQL, Socket.io, JWT, OAuth
+
+PROFESSIONAL EXPERIENCE
+
+Senior Software Engineer | TechCorp Inc. | Jan 2022 - Present
+• Developed and maintained 5+ React.js applications serving 100,000+ users
+• Implemented microservices architecture using Node.js and Express.js
+• Optimized database queries reducing response time by 40%
+• Led a team of 4 developers in Agile environment
+• Integrated third-party APIs and payment gateways
+• Implemented CI/CD pipelines using Jenkins and Docker
+
+Software Engineer | StartupXYZ | Jun 2019 - Dec 2021
+• Built responsive web applications using React.js and Node.js
+• Designed and implemented RESTful APIs serving mobile and web clients
+• Collaborated with UX/UI designers to implement pixel-perfect designs
+• Participated in code reviews and mentored junior developers
+• Implemented automated testing reducing bug reports by 30%
+
+Junior Software Developer | DevSolutions | Jan 2018 - May 2019
+• Developed frontend components using HTML, CSS, and JavaScript
+• Fixed bugs and implemented new features in existing applications
+• Learned full-stack development and modern frameworks
+• Participated in daily standups and sprint planning meetings
+
+EDUCATION
+Bachelor of Science in Computer Science
+University of California, Berkeley | 2017
+GPA: 3.8/4.0
+
+PROJECTS
+E-Commerce Platform (Personal Project)
+• Built full-stack e-commerce application using MERN stack
+• Implemented user authentication, product catalog, and payment processing
+• Deployed on AWS with auto-scaling capabilities
+
+Task Management System (Team Project)
+• Developed collaborative task management tool using React and Node.js
+• Implemented real-time notifications using Socket.io
+• Used PostgreSQL for data persistence
+
+CERTIFICATIONS
+• AWS Certified Solutions Architect - Associate (2023)
+• MongoDB Certified Developer (2022)
+• Certified Scrum Master (2021)
+
+ACHIEVEMENTS
+• Employee of the Month - TechCorp Inc. (June 2023)
+• Published 3 technical articles on Medium with 5,000+ views
+• Speaker at React Conf 2023
+• Open source contributor with 500+ GitHub stars

@@ -7,9 +7,23 @@
 
 # testing
 /coverage
+/tests/coverage
 
 # production
 /build
+
+# uploads and user files
+/uploads/*
+!/uploads/.gitkeep
+
+# logs
+logs/
+*.log
+
+# database
+*.db
+*.sqlite
+*.sqlite3
 
 # misc
 .DS_Store
@@ -19,6 +33,19 @@
 .env.production.local
 .env
 
+# runtime
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# cache
+.cache/
+.tmp/
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# PM2
+.pm2
