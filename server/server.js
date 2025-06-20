@@ -20,6 +20,27 @@ connectDB();
 app.use(express.json());
 app.use(cors()); // Enable CORS
 
+// CORS configuration for Vercel deployments
+const corsConfig = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      process.env.CLIENT_URL || 'http://localhost:3000',
+      'http://localhost:3000',
+    ];
+    // allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+};
+
+app.use(cors(corsConfig));
+
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
