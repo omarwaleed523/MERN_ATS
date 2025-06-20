@@ -39,7 +39,7 @@ const JobpostCard = ({ job, onEdit, onDelete }) => {
     };
     const handleDelete = async () => {
         try {
-            await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/jobposts/${job._id}`);
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts/${job._id}`);
         } catch (error) {
             console.error('Error deleting job post:', error);
         }
