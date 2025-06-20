@@ -1,5 +1,5 @@
 const { saveResume, getAllResumes, getResumeById: fetchResumeById, updateResume: updateResumeService } = require('../services/resumeService');
-const { runPythonScript } = require('../utils/pythonRunnerResume');
+const { parseResumeFile } = require('./resumeParsingController');
 const multer = require('multer');
 const fs = require('fs');
 const Resume = require('../models/Resume');
@@ -23,18 +23,15 @@ const uploadResume = async (req, res) => {
         const { userId } = req.body; // Ensure userId is sent in the request body
         const filePath = req.file.path; // Get the path of the uploaded file
 
-        console.log(`File Path: ${filePath}`); // Debugging log
+        console.log(`File Path: ${filePath}`); // Debugging log        // Call the JavaScript parsing function to parse the resume
+        const parseResponse = await parseResumeFile(filePath);
+        console.log('Parse Response:', parseResponse); // Debugging log
 
-        // Call the Python script to parse the resume
-        const pythonResponse = await runPythonScript(filePath);
-        console.log('Python Response:', pythonResponse); // Debugging log
-
-        if (pythonResponse) {
-            // Add the user ID to the parsed resume data
+        if (parseResponse) {            // Add the user ID to the parsed resume data
             const resumeData = {
                 user: userId,
-                ...pythonResponse,
-                ResumeText: pythonResponse.ResumeText || "No resume text extracted"
+                ...parseResponse,
+                ResumeText: parseResponse.ResumeText || "No resume text extracted"
             };
 
             // Save the parsed resume data to the database
@@ -47,9 +44,8 @@ const uploadResume = async (req, res) => {
                 else console.log(`File deleted: ${filePath}`);
             });
 
-            res.status(201).json(savedResume);
-        } else {
-            console.error('Failed to generate response from Python script'); // Debugging log
+            res.status(201).json(savedResume);        } else {
+            console.error('Failed to generate response from parsing function'); // Debugging log
             res.status(500).json({ error: 'Failed to parse resume' });
         }
     } catch (error) {
