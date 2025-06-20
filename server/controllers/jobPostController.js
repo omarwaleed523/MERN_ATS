@@ -1,5 +1,5 @@
 const Jobpost = require('../models/Jobpost');
-const { runPythonScript } = require('../utils/pythonRunnerJD');
+const { parseJobDescriptionFile } = require('./jobDescriptionParsingController');
 const fs = require('fs').promises;
 const multer = require('multer');
 const path = require('path');
@@ -139,7 +139,7 @@ const deleteJobPost = async (req, res) => {
     }
 };
 
-// New method: Upload a job post file, process JD data via Python, then create a JobPost
+// New method: Upload a job post file, process JD data via JavaScript, then create a JobPost
 const uploadJobPost = async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
@@ -152,26 +152,22 @@ const uploadJobPost = async (req, res) => {
     }
 
     const filePath = req.file.path;
-    console.log(`Processing file: ${filePath}`);
+    console.log(`Processing file: ${filePath}`);    try {
+        const parseResponse = await parseJobDescriptionFile(filePath);
+        console.log('Parse response:', parseResponse);
 
-    try {
-        const pythonResponse = await runPythonScript(filePath);
-        console.log('Python script response:', pythonResponse);
-
-        if (!pythonResponse) {
+        if (!parseResponse) {
             throw new Error('Failed to process job post file');
-        }
-
-        const jobPost = new Jobpost({
-            jobTitle: pythonResponse.jobTitle,
-            salary: pythonResponse.salary,
-            location: pythonResponse.location,
-            jobDescription: pythonResponse.jobDescription,
-            company: pythonResponse.company,
-            skills: pythonResponse.skills,
-            experience: pythonResponse.experience || [],
-            education: pythonResponse.education || [],
-            department: pythonResponse.department,
+        }        const jobPost = new Jobpost({
+            jobTitle: parseResponse.jobTitle,
+            salary: parseResponse.salary,
+            location: parseResponse.location,
+            jobDescription: parseResponse.jobDescription,
+            company: parseResponse.company,
+            skills: parseResponse.skills,
+            experience: parseResponse.experience || [],
+            education: parseResponse.education || [],
+            department: parseResponse.department,
             userId,
             recruiter: userId // Set the recruiter field to match userId
         });

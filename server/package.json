@@ -1,7 +1,8 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "index.js",  "scripts": {
+  "main": "index.js",
+  "scripts": {
     "test": "jest --config jest.config.js --verbose --coverage",
     "test:watch": "jest --config jest.config.js --watch",
     "test:unit": "jest --config jest.config.js --testPathPattern=tests/unit --verbose",
@@ -27,10 +28,12 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.9.1",
     "mongoose": "^8.9.5",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.10.1",
     "nodemon": "^3.1.9",
+    "pdf-parse": "^1.1.1",
     "redis": "^4.7.0"
   },
   "devDependencies": {

@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
 
 const ExperienceSchema = new mongoose.Schema({
-    Title: String,       // Match the Python Response
-    Company: String,     // Match the Python Response
-    Dates: String,       // Match the Python Response
-    description: String  // Match the Python Response
+    Title: String,       // Match the JavaScript parsing response
+    Company: String,     // Match the JavaScript parsing response
+    Dates: String,       // Match the JavaScript parsing response
+    description: String  // Match the JavaScript parsing response
 });
 
 const EducationSchema = new mongoose.Schema({
-    Degree: String,      // Match the Python Response
-    University: String,  // Match the Python Response
-    Location: String     // Match the Python Response
+    Degree: String,      // Match the JavaScript parsing response
+    University: String,  // Match the JavaScript parsing response
+    Location: String     // Match the JavaScript parsing response
 });
 
 const ResumeSchema = new mongoose.Schema({
