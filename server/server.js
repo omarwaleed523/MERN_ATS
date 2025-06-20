@@ -3,7 +3,17 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
 const cors = require('cors'); // Import cors
-require('dotenv').config();
+const dotenv = require('dotenv');
+
+// Load environment variables based on environment
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config({
+    path: "./config/.env",
+  });
+} else {
+  dotenv.config();
+}
+
 const path = require('path');
 const fs = require('fs'); // Add fs module
 const applicationRoutes = require('./routes/applicationroutes');
@@ -18,27 +28,15 @@ connectDB();
 
 // Middleware
 app.use(express.json());
-app.use(cors()); // Enable CORS
 
-// CORS configuration for Vercel deployments
+// CORS configuration
 const corsConfig = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      process.env.CLIENT_URL || 'http://localhost:3000',
-      'http://localhost:3000',
-    ];
-    // allow requests with no origin (like mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
+  origin: process.env.CLIENT_URL,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  method: ["GET", "POST", "PUT", "DELETE"],
 };
 
+app.options("", cors(corsConfig));
 app.use(cors(corsConfig));
 
 // Ensure uploads directory exists

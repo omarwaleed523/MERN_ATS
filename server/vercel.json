@@ -6,7 +6,7 @@
       "src": "server.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["config/**", "controllers/**", "middleware/**", "models/**", "routes/**", "services/**"]
+        "includeFiles": ["config/**", "controllers/**", "middleware/**", "models/**", "routes/**", "services/**", "utils/**", "uploads/**"]
       }
     },
     {
@@ -15,6 +15,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "/uploads/(.*)",
+      "dest": "/uploads/$1"
+    },
     {
       "src": "/(.*)",
       "dest": "server.js",
