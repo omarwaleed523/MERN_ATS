@@ -160,8 +160,7 @@ const getUserProfile = async (req, res) => {
         message: 'Forbidden: You can only access your own profile'
       });
     }
-    
-    const user = await User.findById(req.params.id).select('-password');
+      const user = await User.findById(req.params.id).select('-password');
     
     if (!user) {
       return res.status(404).json({ 
@@ -170,7 +169,15 @@ const getUserProfile = async (req, res) => {
       });
     }
     
-    res.json(user);
+    // Create a response object with user data
+    const userResponse = user.toObject();
+    
+    // Add the full URL for profile picture if it exists
+    if (user.profilepicture) {
+      userResponse.profilepictureUrl = `${req.protocol}://${req.get('host')}${user.profilepicture}`;
+    }
+    
+    res.json(userResponse);
   } catch (error) {
     console.error('Get profile error:', error.message);
     res.status(500).json({
@@ -356,16 +363,17 @@ const updateProfilePicture = async (req, res) => {
         console.error('Error deleting old profile picture:', err);
       }
     }
-    
-    // Update with new picture path
+      // Update with new picture path - ensure the path is correct for frontend
     user.profilepicture = `/uploads/${req.file.filename}`;
     await user.save();
     
-    // Return success response
+    // Return success response with the full URL for the frontend
+    const fullProfilePictureUrl = `${req.protocol}://${req.get('host')}${user.profilepicture}`;
     res.json({ 
       success: true,
       message: 'Profile picture updated successfully',
-      profilepicture: user.profilepicture
+      profilepicture: user.profilepicture,
+      profilepictureUrl: fullProfilePictureUrl
     });
   } catch (error) {
     console.error('Update profile picture error:', error.message);

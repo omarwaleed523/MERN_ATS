@@ -69,10 +69,13 @@ const ManageProfile = () => {
                     name: response.data.name || '',
                     email: response.data.email || '',
                     phonenumber: response.data.phonenumber || '',
-                });
-                
+                });                
                 // Set preview image if profile picture exists
-                if (response.data.profilepicture) {
+                if (response.data.profilepictureUrl) {
+                    // Use the full URL provided by the server
+                    setPreviewImage(response.data.profilepictureUrl);
+                } else if (response.data.profilepicture) {
+                    // Fallback to constructing the URL manually
                     const imageUrl = response.data.profilepicture.startsWith('http')
                         ? response.data.profilepicture
                         : `http://localhost:5000${response.data.profilepicture}`;
@@ -322,14 +325,20 @@ const ManageProfile = () => {
                     'Authorization': `Bearer ${user.token}`
                 }
             });
-            
-            // Update profile image in cookies and context
-            const imageUrl = response.data.profilepicture?.startsWith('http')
-                ? response.data.profilepicture
-                : `http://localhost:5000${response.data.profilepicture}`;
+              // Update profile image in cookies and context
+            // Use the full URL provided by the server if available
+            let imageUrl;
+            if (response.data.profilepictureUrl) {
+                imageUrl = response.data.profilepictureUrl;
+            } else if (response.data.profilepicture) {
+                imageUrl = response.data.profilepicture?.startsWith('http')
+                    ? response.data.profilepicture
+                    : `http://localhost:5000${response.data.profilepicture}`;
+            }
             
             Cookies.set('profileImage', imageUrl);
             setUser({ ...user, profileImage: imageUrl });
+            setPreviewImage(imageUrl); // Update the preview image as well
             
             setMessage({
                 type: 'success',

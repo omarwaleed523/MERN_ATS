@@ -5,6 +5,7 @@ const resumeRoutes = require('./routes/resumeRoutes');
 const cors = require('cors'); // Import cors
 require('dotenv').config();
 const path = require('path');
+const fs = require('fs'); // Add fs module
 const applicationRoutes = require('./routes/applicationroutes');
 const jobPostRoutes = require('./routes/jobpostroutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -19,7 +20,14 @@ connectDB();
 app.use(express.json());
 app.use(cors()); // Enable CORS
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(uploadsDir));
 
 // Routes
 app.use('/api/auth', authRoutes);
