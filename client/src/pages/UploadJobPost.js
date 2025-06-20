@@ -48,7 +48,7 @@ const UploadJobPost = () => {
 
         try {
             const userId = Cookies.get('userId');
-            const response = await axios.post('http://localhost:5000/api/jobposts', {
+            const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts`, {
                 ...jobData,
                 skills: jobData.skills.split(',').map(skill => skill.trim()),
                 userId
@@ -79,7 +79,7 @@ const UploadJobPost = () => {
         formData.append('userId', Cookies.get('userId'));
 
         try {
-            const response = await axios.post('http://localhost:5000/api/jobposts/upload', formData, {
+            const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 

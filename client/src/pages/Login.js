@@ -39,8 +39,8 @@ const Login = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', formData);
-      
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/auth/login`, formData);
+
       // Check if login was successful
       if (!response.data.success) {
         setError(response.data.message || 'Login failed. Please try again.');
@@ -55,7 +55,7 @@ const Login = () => {
       const profileImageUrl = profileImage
         ? profileImage.startsWith('http') 
           ? profileImage 
-          : `http://localhost:5000${profileImage}`
+          : `${process.env.REACT_APP_BACKEND_URL}${profileImage}`
         : null;
 
       // Set cookies for user data (7 day expiry)

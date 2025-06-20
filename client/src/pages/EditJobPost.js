@@ -97,7 +97,7 @@ const EditJobPost = () => {
             const userId = Cookies.get('userId');
             const skillsArray = formData.skills.split(',').map(item => item.trim()).filter(item => item);
 
-            await axios.put(`http://localhost:5000/api/jobposts/${job._id}`, {
+            await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts/${job._id}`, {
                 jobTitle: formData.jobTitle,
                 salary: formData.salary,
                 location: formData.location,

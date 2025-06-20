@@ -20,7 +20,7 @@ const UserApplications = () => {
         const fetchApplications = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(`http://localhost:5000/api/applications/${userId}`);
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/applications/${userId}`);
                 setApplications(response.data);
                 setError(null);
             } catch (error) {
@@ -39,7 +39,7 @@ const UserApplications = () => {
         }
 
         try {
-            await axios.delete(`http://localhost:5000/api/applications/${applicationId}`);
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/applications/${applicationId}`);
             setApplications(applications.filter(app => app._id !== applicationId));
             setNotificationMsg('Application withdrawn successfully');
             setShowNotification(true);

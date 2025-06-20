@@ -37,7 +37,7 @@ const AdminJobManagement = () => {
   const fetchJobs = React.useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/jobposts', {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts`, {
         headers: { 'x-auth-token': user.token }
       });
       
@@ -175,7 +175,7 @@ const AdminJobManagement = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/jobposts', 
+        `${process.env.REACT_APP_BACKEND_URL}/api/jobposts`, 
         {
           ...formData,
           userId: user._id // Admin creates the job post
@@ -199,7 +199,7 @@ const AdminJobManagement = () => {
     e.preventDefault();
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/jobposts/${selectedJob._id}`, 
+        `${process.env.REACT_APP_BACKEND_URL}/api/jobposts/${selectedJob._id}`, 
         formData,
         {
           headers: { 'x-auth-token': user.token }
@@ -222,7 +222,7 @@ const AdminJobManagement = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/jobposts/${selectedJob._id}`, {
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts/${selectedJob._id}`, {
         headers: { 'x-auth-token': user.token }
       });
       

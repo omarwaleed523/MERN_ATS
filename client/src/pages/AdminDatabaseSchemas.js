@@ -23,7 +23,7 @@ const AdminDatabaseSchemas = () => {
   const fetchSchemas = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/admin/schemas', {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/schemas`, {
         headers: { 'x-auth-token': user.token }
       });
       setSchemas(response.data);

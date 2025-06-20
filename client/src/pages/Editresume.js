@@ -39,7 +39,7 @@ const EditResume = () => {
     useEffect(() => {
         const fetchResume = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/resumes/${resumeId}`);
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/resumes/${resumeId}`);
                 setResume(response.data);
             } catch (error) {
                 console.error('Error fetching resume:', error);
@@ -137,7 +137,7 @@ const EditResume = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.put(`http://localhost:5000/api/resumes/${resumeId}`, resume);
+            await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/resumes/${resumeId}`, resume);
             setMessage('Changes saved successfully!');
             setShowAlert(true);
             setTimeout(() => {

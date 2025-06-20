@@ -28,7 +28,7 @@ const Navbar = () => {
         if (userId && token) {
             // Format profile image URL if it doesn't start with http
             const formattedProfileImage = profileImage && !profileImage.startsWith('http') 
-                ? `http://localhost:5000${profileImage}` 
+                ? `${process.env.REACT_APP_BACKEND_URL}${profileImage}` 
                 : profileImage;
                 
             setUser({ profileImage: formattedProfileImage, role, userId, name, token });

@@ -59,7 +59,7 @@ const ManageProfile = () => {
                     return;
                 }
                 
-                const response = await axios.get(`http://localhost:5000/api/auth/user/${userId}`, {
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/auth/user/${userId}`, {
                     headers: {
                         'Authorization': `Bearer ${user.token}`
                     }
@@ -78,7 +78,7 @@ const ManageProfile = () => {
                     // Fallback to constructing the URL manually
                     const imageUrl = response.data.profilepicture.startsWith('http')
                         ? response.data.profilepicture
-                        : `http://localhost:5000${response.data.profilepicture}`;
+                        : `${process.env.REACT_APP_BACKEND_URL}${response.data.profilepicture}`;
                     setPreviewImage(imageUrl);
                 }
             } catch (error) {
@@ -185,7 +185,7 @@ const ManageProfile = () => {
         }
         
         try {
-            const response = await axios.put(`http://localhost:5000/api/auth/user/${userId}`, profile, {
+            const response = await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/auth/user/${userId}`, profile, {
                 headers: {
                     'Authorization': `Bearer ${user.token}`
                 }
@@ -253,7 +253,7 @@ const ManageProfile = () => {
         }
         
         try {
-            const response = await axios.put(`http://localhost:5000/api/auth/user/${userId}/password`, {
+            const response = await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/auth/user/${userId}/password`, {
                 currentPassword: passwordData.currentPassword,
                 newPassword: passwordData.newPassword
             }, {
@@ -319,7 +319,7 @@ const ManageProfile = () => {
             formData.append('profilepicture', profilePicture);
             
             // Updated URL to match the backend route pattern
-            const response = await axios.put(`http://localhost:5000/api/auth/user/${userId}/profile-picture`, formData, {
+            const response = await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/auth/user/${userId}/profile-picture`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     'Authorization': `Bearer ${user.token}`
@@ -333,7 +333,7 @@ const ManageProfile = () => {
             } else if (response.data.profilepicture) {
                 imageUrl = response.data.profilepicture?.startsWith('http')
                     ? response.data.profilepicture
-                    : `http://localhost:5000${response.data.profilepicture}`;
+                    : `${process.env.REACT_APP_BACKEND_URL}${response.data.profilepicture}`;
             }
             
             Cookies.set('profileImage', imageUrl);

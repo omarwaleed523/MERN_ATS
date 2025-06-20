@@ -27,8 +27,8 @@ const RecruiterHome = () => {
             const userId = Cookies.get('userId');
             
             // Fetch job posts created by this recruiter
-            const jobResponse = await axios.get(`http://localhost:5000/api/jobposts?userId=${userId}`);
-            
+            const jobResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts?userId=${userId}`);
+
             if (!jobResponse.data || !Array.isArray(jobResponse.data)) {
                 console.error('Invalid job posts data:', jobResponse.data);
                 setJobPosts([]);
@@ -50,8 +50,8 @@ const RecruiterHome = () => {
             try {
                 // Get all applications - this will be filtered on the client side
                 // We should create a server endpoint to filter by jobIds in the future for better performance
-                const applicationsResponse = await axios.get('http://localhost:5000/api/applications/');
-                
+                const applicationsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/applications/`);
+
                 if (applicationsResponse.data && Array.isArray(applicationsResponse.data)) {
                     // Filter applications to only include those for jobs created by this recruiter
                     const recruiterApplications = applicationsResponse.data.filter(app => {
@@ -133,7 +133,7 @@ const RecruiterHome = () => {
 
     const handleDelete = async (jobPostId) => {
         try {
-            await axios.delete(`http://localhost:5000/api/jobposts/${jobPostId}`);
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts/${jobPostId}`);
             fetchJobPosts();
         } catch (error) {
             console.error('Error deleting job post:', error);

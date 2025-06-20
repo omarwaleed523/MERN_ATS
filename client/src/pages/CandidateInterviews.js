@@ -37,7 +37,7 @@ const CandidateInterviews = () => {
     const fetchInterviews = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5000/api/interviews', {
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/interviews`, {
           headers: { 'x-auth-token': user.token }
         });
         setInterviews(response.data);

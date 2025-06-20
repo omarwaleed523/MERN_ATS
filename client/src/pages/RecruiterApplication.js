@@ -88,11 +88,11 @@ const RecruiterApplication = () => {
                 const recruiterId = Cookies.get('userId');
 
                 // First, get all job posts created by this recruiter
-                const jobPostsResponse = await axios.get(`http://localhost:5000/api/jobposts?userId=${recruiterId}`);
+                const jobPostsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts?userId=${recruiterId}`);
                 const recruiterJobPosts = jobPostsResponse.data;
 
                 // Get all applications
-                const applicationsResponse = await axios.get('http://localhost:5000/api/applications/');
+                const applicationsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/applications/`);
 
                 // Filter applications to only include those for jobs created by this recruiter
                 const filteredApplications = applicationsResponse.data.filter(app =>
@@ -132,7 +132,7 @@ const RecruiterApplication = () => {
     const handleStatusChange = async (applicationId, newStatus) => {
         try {
             setLoading(true);
-            await axios.put(`http://localhost:5000/api/applications/${applicationId}/status`, {
+            await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/applications/${applicationId}/status`, {
                 status: newStatus
             });
 
@@ -186,7 +186,7 @@ const RecruiterApplication = () => {
             setProcessingBulkAction(true);
             
             // Call the bulk update API
-            const result = await axios.put('http://localhost:5000/api/applications/bulk-status-update', {
+            const result = await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/applications/bulk-status-update`, {
                 applicationIds: selectedApplications,
                 status: bulkStatus
             });
@@ -278,18 +278,18 @@ const RecruiterApplication = () => {
             setLoading(true);
 
             // Call the process matching endpoint
-            await axios.post('http://localhost:5000/api/applications/process-matching', {
+            await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/applications/process-matching`, {
                 applicationIds: applicationsToProcess.map(app => app._id)
             });
 
             // Refresh applications to get updated similarity scores
-            const response = await axios.get('http://localhost:5000/api/applications/');
+            const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/applications/`);
 
             // Get current recruiter's ID
             const recruiterId = Cookies.get('userId');
 
             // Get all job posts created by this recruiter
-            const jobPostsResponse = await axios.get(`http://localhost:5000/api/jobposts?userId=${recruiterId}`);
+            const jobPostsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts?userId=${recruiterId}`);
             const recruiterJobPosts = jobPostsResponse.data;
 
             // Filter applications again
@@ -1268,7 +1268,7 @@ const RecruiterApplication = () => {
                                                                                         try {
                                                                                             setSavingFeedback(true);
                                                                                             await axios.put(
-                                                                                                `http://localhost:5000/api/applications/${activeApplication._id}/feedback`,
+                                                                                                `${process.env.REACT_APP_BACKEND_URL}/api/applications/${activeApplication._id}/feedback`,
                                                                                                 { missingSkills: editedMissingSkills }
                                                                                             );
                                                                                             
@@ -1354,7 +1354,7 @@ const RecruiterApplication = () => {
                                                                                         try {
                                                                                             setSavingFeedback(true);
                                                                                             await axios.put(
-                                                                                                `http://localhost:5000/api/applications/${activeApplication._id}/feedback`,
+                                                                                                `${process.env.REACT_APP_BACKEND_URL}/api/applications/${activeApplication._id}/feedback`,
                                                                                                 { improvementSuggestions: editedImprovements }
                                                                                             );
                                                                                             

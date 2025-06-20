@@ -23,7 +23,7 @@ const AdminApplicationManagement = () => {
   const fetchApplications = React.useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/applications/all', {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/applications/all`, {
         headers: { 'x-auth-token': user.token }
       });
       
@@ -103,7 +103,7 @@ const AdminApplicationManagement = () => {
   const handleStatusChange = async () => {
     try {
       await axios.put(
-        `http://localhost:5000/api/applications/${selectedApplication._id}/status`,
+        `${process.env.REACT_APP_BACKEND_URL}/api/applications/${selectedApplication._id}/status`,
         { status: newStatus },
         { headers: { 'x-auth-token': user.token } }
       );
@@ -123,7 +123,7 @@ const AdminApplicationManagement = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/applications/${selectedApplication._id}`, {
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/applications/${selectedApplication._id}`, {
         headers: { 'x-auth-token': user.token }
       });
       

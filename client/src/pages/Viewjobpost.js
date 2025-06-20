@@ -26,7 +26,7 @@ const Viewjobpost = () => {
         const fetchJob = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get(`http://localhost:5000/api/jobposts/${id}`);
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts/${id}`);
                 setJob(response.data);
                 
                 // Extract recruiter info if available
@@ -71,7 +71,7 @@ const Viewjobpost = () => {
         setLoadingResumes(true);
 
         try {
-            const response = await axios.get('http://localhost:5000/api/resumes/user/' + userId);
+            const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/resumes/user/${userId}`);
             setResumes(response.data);
         } catch (error) {
             console.error('Error fetching resumes:', error);
@@ -98,7 +98,7 @@ const Viewjobpost = () => {
         setApplying(true);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/applications/apply', {
+            const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/applications/apply`, {
                 userId: userId,
                 recruiterId: job.userId, // Add the recruiter ID from the job posting
                 resumeId: selectedResumeId,

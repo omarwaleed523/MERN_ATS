@@ -24,7 +24,7 @@ const AdminInterviewManagement = () => {
   const fetchInterviews = React.useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/admin/interviews', {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/interviews`, {
         headers: { 'x-auth-token': user.token }
       });
       
@@ -104,7 +104,7 @@ const AdminInterviewManagement = () => {
   const handleStatusChange = async () => {
     try {
       await axios.put(
-        `http://localhost:5000/api/admin/interviews/${selectedInterview._id}/status`,
+        `${process.env.REACT_APP_BACKEND_URL}/api/admin/interviews/${selectedInterview._id}/status`,
         { status: newStatus },
         { headers: { 'x-auth-token': user.token } }
       );
@@ -124,7 +124,7 @@ const AdminInterviewManagement = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/admin/interviews/${selectedInterview._id}`, {
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/admin/interviews/${selectedInterview._id}`, {
         headers: { 'x-auth-token': user.token }
       });
       

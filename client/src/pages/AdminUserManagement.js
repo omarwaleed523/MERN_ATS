@@ -40,7 +40,7 @@ const AdminUserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/admin/users', {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/users`, {
         headers: { 'x-auth-token': user.token }
       });
       setUsers(response.data);
@@ -94,7 +94,7 @@ const AdminUserManagement = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/admin/users/${selectedUser._id}`, editFormData, {
+      await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/admin/users/${selectedUser._id}`, editFormData, {
         headers: { 'x-auth-token': user.token }
       });
       
@@ -114,7 +114,7 @@ const AdminUserManagement = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/admin/users/${selectedUser._id}`, {
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/admin/users/${selectedUser._id}`, {
         headers: { 'x-auth-token': user.token }
       });
       

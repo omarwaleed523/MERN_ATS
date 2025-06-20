@@ -45,7 +45,7 @@ export const UserProvider = ({ children }) => {
                         };
                         
                         // Call verify-token endpoint
-                        await axios.get('http://localhost:5000/api/auth/verify-token', config);
+                        await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/auth/verify-token`, config);
                         // If we get here, token is valid
                     } catch (error) {
                         console.warn('Token validation failed, logging out', error);
@@ -86,7 +86,7 @@ export const UserProvider = ({ children }) => {
         if (token) {
             try {
                 await axios.post(
-                    'http://localhost:5000/api/auth/logout',
+                    `${process.env.REACT_APP_BACKEND_URL}/api/auth/logout`,
                     {},
                     {
                         headers: {

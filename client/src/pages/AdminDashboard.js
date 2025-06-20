@@ -53,32 +53,32 @@ const AdminDashboard = () => {
         setLoading(true);
         
         // Fetch dashboard statistics
-        const statsResponse = await axios.get('http://localhost:5000/api/admin/stats', {
+        const statsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/stats`, {
           headers: { 'x-auth-token': user.token }
         });
         
         // Fetch recent users
-        const usersResponse = await axios.get('http://localhost:5000/api/admin/recent-users', {
+        const usersResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/recent-users`, {
           headers: { 'x-auth-token': user.token }
         });
         
         // Fetch recent job posts
-        const jobsResponse = await axios.get('http://localhost:5000/api/admin/recent-jobs', {
+        const jobsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/recent-jobs`, {
           headers: { 'x-auth-token': user.token }
         });
 
         // Fetch top skills across resumes (new endpoint to be created)
-        const skillsResponse = await axios.get('http://localhost:5000/api/admin/top-skills', {
+        const skillsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/top-skills`, {
           headers: { 'x-auth-token': user.token }
         }).catch(() => ({ data: [] }));
         
         // Fetch company stats (new endpoint to be created)
-        const companiesResponse = await axios.get('http://localhost:5000/api/admin/company-stats', {
+        const companiesResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/company-stats`, {
           headers: { 'x-auth-token': user.token }
         }).catch(() => ({ data: [] }));
         
         // Fetch system activity over time (new endpoint to be created)
-        const activityResponse = await axios.get('http://localhost:5000/api/admin/activity-timeline', {
+        const activityResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/admin/activity-timeline`, {
           headers: { 'x-auth-token': user.token }
         }).catch(() => ({ 
           data: {

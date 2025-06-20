@@ -66,7 +66,7 @@ const JobpostCardForAdmin = ({ job, onEdit, onDelete, onViewApplicants }) => {
     const handleDelete = async () => {
         try {
             setIsDeleting(true);
-            await axios.delete(`http://localhost:5000/api/jobposts/${job._id}`);
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts/${job._id}`);
             onDelete(job._id);
         } catch (error) {
             console.error('Error deleting job post:', error);

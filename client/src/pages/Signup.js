@@ -137,7 +137,7 @@ const Signup = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', data, {
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/auth/register`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

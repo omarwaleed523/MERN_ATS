@@ -74,7 +74,7 @@ const RecruiterInterviews = () => {
     const fetchInterviews = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5000/api/interviews', {
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/interviews`, {
           headers: { 'x-auth-token': user.token }
         });
         setInterviews(response.data);
@@ -97,14 +97,14 @@ const RecruiterInterviews = () => {
     const fetchApplications = async () => {
       try {
         // First, get job posts created by this recruiter
-        const jobPostsResponse = await axios.get(`http://localhost:5000/api/jobposts?userId=${user.userId}`, {
+        const jobPostsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts?userId=${user.userId}`, {
           headers: { 'x-auth-token': user.token }
         });
         
         if (jobPostsResponse.data.length === 0) return;
         
         // Then get applications for these job posts
-        const applicationsResponse = await axios.get('http://localhost:5000/api/applications', {
+        const applicationsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/applications`, {
           headers: { 'x-auth-token': user.token }
         });
         
@@ -257,7 +257,7 @@ const RecruiterInterviews = () => {
         videoConferenceLink: formData.videoConferenceLink
       };
       
-      const response = await axios.post('http://localhost:5000/api/interviews', 
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/interviews`, 
         interviewData,
         { headers: { 'x-auth-token': user.token } }
       );
@@ -317,7 +317,7 @@ const RecruiterInterviews = () => {
       };
       
       const response = await axios.put(
-        `http://localhost:5000/api/interviews/${selectedInterview._id}`,
+        `${process.env.REACT_APP_BACKEND_URL}/api/interviews/${selectedInterview._id}`,
         interviewData,
         { headers: { 'x-auth-token': user.token } }
       );
@@ -360,7 +360,7 @@ const RecruiterInterviews = () => {
     try {
       // Include the x-auth-token in the headers
       await axios.delete(
-        `http://localhost:5000/api/interviews/${selectedInterview._id}`,
+        `${process.env.REACT_APP_BACKEND_URL}/api/interviews/${selectedInterview._id}`,
         { 
           headers: { 
             'x-auth-token': user.token,

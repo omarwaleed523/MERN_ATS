@@ -20,7 +20,7 @@ const Resumeparsing = () => {
     const fetchResumes = async () => {
         if (userId) {
             try {
-                const response = await axios.get(`http://localhost:5000/api/resumes/user/${userId}`);
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/resumes/user/${userId}`);
                 setResumes(response.data);
             } catch (error) {
                 console.error('Error fetching resumes:', error);
@@ -44,7 +44,7 @@ const Resumeparsing = () => {
     // Function to handle resume deletion
     const handleDeleteResume = async (resumeId) => {
         try {
-            await axios.delete(`http://localhost:5000/api/resumes/${resumeId}`);
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/resumes/${resumeId}`);
             fetchResumes();
             showMessage('Resume deleted successfully!', 'success');
         } catch (error) {
@@ -81,7 +81,7 @@ const Resumeparsing = () => {
         formData.append('userId', userId);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/resumes/upload', formData, {
+            const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/resumes/upload`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

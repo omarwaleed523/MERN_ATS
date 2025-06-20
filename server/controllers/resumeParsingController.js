@@ -115,24 +115,73 @@ async function generateResponse(extractedText) {
             const response = await result.response;
             const text = response.text();
 
-            // Extract JSON from the response using regex
-            const jsonPattern = /{[\s\S]*}/;
-            const matches = text.match(jsonPattern);
+            // Log the raw Gemini response for debugging
+            console.log('Raw Gemini response:', text);
+
+            // Remove all Markdown code block markers (``` and ```json)
+            let cleanedText = text.replace(/```json|```/gi, '').trim();
+
+            // Try to parse the whole cleaned text as JSON first
+            try {
+                if (cleanedText.startsWith('{') && cleanedText.endsWith('}')) {
+                    // Attempt to fix common JSON issues: remove trailing commas
+                    let fixedText = cleanedText.replace(/,\s*([}\]])/g, '$1');
+                    try {
+                        const jsonResponse = JSON.parse(fixedText);
+                        if (!jsonResponse.ResumeText) {
+                            jsonResponse.ResumeText = extractedText;
+                        }
+                        console.log('Successfully parsed resume (whole text)');
+                        return jsonResponse;
+                    } catch (jsonError) {
+                        // Try to repair JSON using jsonrepair if available
+                        try {
+                            const { jsonrepair } = require('jsonrepair');
+                            const repaired = jsonrepair(fixedText);
+                            const jsonResponse = JSON.parse(repaired);
+                            if (!jsonResponse.ResumeText) {
+                                jsonResponse.ResumeText = extractedText;
+                            }
+                            console.log('Successfully parsed resume (jsonrepair)');
+                            return jsonResponse;
+                        } catch (repairError) {
+                            console.error('jsonrepair failed:', repairError.message);
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore and fallback to regex extraction
+            }
+
+            // Extract the first JSON object from the response
+            const jsonPattern = /{[\s\S]*?}\s*(?=\n|$)/;
+            const matches = cleanedText.match(jsonPattern);
 
             if (matches) {
-                const cleanResponseText = matches[0];
+                let cleanResponseText = matches[0];
+                // Attempt to fix common JSON issues: remove trailing commas
+                cleanResponseText = cleanResponseText.replace(/,\s*([}\]])/g, '$1');
                 try {
                     const jsonResponse = JSON.parse(cleanResponseText);
-                    
-                    // If ResumeText wasn't provided by the model, add it
                     if (!jsonResponse.ResumeText) {
                         jsonResponse.ResumeText = extractedText;
                     }
-                    
-                    console.log('Successfully parsed resume');
+                    console.log('Successfully parsed resume (regex fallback)');
                     return jsonResponse;
                 } catch (jsonError) {
-                    throw new Error(`JSON parsing failed: ${jsonError.message}`);
+                    // Try to repair JSON using jsonrepair if available
+                    try {
+                        const { jsonrepair } = require('jsonrepair');
+                        const repaired = jsonrepair(cleanResponseText);
+                        const jsonResponse = JSON.parse(repaired);
+                        if (!jsonResponse.ResumeText) {
+                            jsonResponse.ResumeText = extractedText;
+                        }
+                        console.log('Successfully parsed resume (regex+jsonrepair)');
+                        return jsonResponse;
+                    } catch (repairError) {
+                        throw new Error(`JSON parsing and repair failed: ${repairError.message}`);
+                    }
                 }
             } else {
                 throw new Error('No valid JSON found in the response');

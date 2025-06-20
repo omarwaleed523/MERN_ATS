@@ -37,10 +37,9 @@ const JobpostCard = ({ job, onEdit, onDelete }) => {
         const date = job.createdAt ? new Date(job.createdAt) : new Date();
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
-
     const handleDelete = async () => {
         try {
-            await axios.delete(`http://localhost:5000/api/jobposts/${job._id}`);
+            await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/jobposts/${job._id}`);
         } catch (error) {
             console.error('Error deleting job post:', error);
         }

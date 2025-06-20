@@ -25,7 +25,7 @@ const CandidateHome = () => {
     const fetchJobPosts = async () => {
         try {
             setLoading(true);
-            const response = await axios.get('http://localhost:5000/api/jobposts');
+            const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/jobposts`);
             console.log('Job Posts:', response.data);
             setJobPosts(response.data);
             setError(null);
