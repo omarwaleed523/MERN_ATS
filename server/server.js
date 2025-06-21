@@ -25,12 +25,12 @@ app.use(express.json());
 
 // CORS configuration
 const corsConfig = {
-  origin: process.env.CLIENT_URL,
+  origin: process.env.CLIENT_URL || "*",
   credentials: true,
-  method: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 };
 
-app.options("", cors(corsConfig));
+app.options("*", cors(corsConfig));
 app.use(cors(corsConfig));
 
 // Routes
