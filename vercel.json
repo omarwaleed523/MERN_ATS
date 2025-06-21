@@ -1,15 +1,26 @@
 {
-  "buildCommand": "cd client && npm install && npm run build",
-  "outputDirectory": "client/build",
-  "framework": "create-react-app",
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/server/server.js"
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    { 
+      "src": "/api/(.*)", 
+      "dest": "/api/$1" 
     },
-    {
-      "source": "/(.*)",
-      "destination": "/client/index.html"
+    { 
+      "src": "/(.*)", 
+      "dest": "/client/build/$1" 
+    },
+    { 
+      "src": "/(.*)", 
+      "dest": "/client/build/index.html" 
     }
   ]
 }
