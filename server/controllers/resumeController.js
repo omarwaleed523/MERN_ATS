@@ -1,52 +1,64 @@
 const { saveResume, getAllResumes, getResumeById: fetchResumeById, updateResume: updateResumeService } = require('../services/resumeService');
 const { parseResumeFile } = require('./resumeParsingController');
-const multer = require('multer');
 const fs = require('fs');
 const Resume = require('../models/Resume');
 const User = require('../models/User');
-
-// Multer setup for file upload
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        cb(null, file.originalname);
-    }
-});
-
-const upload = multer({ storage: storage });
+const { uploadToCloudinary } = require('../config/cloudinary');
+const streamifier = require('streamifier');
 
 // Function to upload and parse a resume
 const uploadResume = async (req, res) => {
     try {
         const { userId } = req.body; // Ensure userId is sent in the request body
-        const filePath = req.file.path; // Get the path of the uploaded file
-
-        console.log(`File Path: ${filePath}`); // Debugging log        // Call the JavaScript parsing function to parse the resume
-        const parseResponse = await parseResumeFile(filePath);
+        
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No file uploaded'
+            });
+        }        // Upload file to Cloudinary
+        const result = await uploadToCloudinary(req.file.buffer, 'resumes');
+        const cloudinaryUrl = result.secure_url;
+        
+        // Determine file type based on mimetype or original filename
+        const fileType = req.file.mimetype.includes('pdf') ? 'pdf' : 
+                        (req.file.mimetype.includes('document') || req.file.originalname.endsWith('.docx')) ? 'docx' : null;
+                        
+        if (!fileType) {
+            return res.status(400).json({
+                success: false,
+                message: 'Unsupported file type. Only PDF and DOCX files are allowed.'
+            });
+        }
+          
+        // Call the JavaScript parsing function to parse the resume
+        const parseResponse = await parseResumeFile(req.file.buffer, fileType);
         console.log('Parse Response:', parseResponse); // Debugging log
-
-        if (parseResponse) {            // Add the user ID to the parsed resume data
+        
+        if (parseResponse) {
+            // Add the user ID and file URL to the parsed resume data
             const resumeData = {
                 user: userId,
                 ...parseResponse,
-                ResumeText: parseResponse.ResumeText || "No resume text extracted"
+                ResumeText: parseResponse.ResumeText || "No resume text extracted",
+                resumeUrl: cloudinaryUrl // Store the Cloudinary URL
             };
 
             // Save the parsed resume data to the database
             const savedResume = await saveResume(resumeData);
             console.log('Saved Resume:', savedResume); // Debugging log
 
-            // Delete the uploaded file after processing
-            fs.unlink(filePath, (err) => {
-                if (err) console.error(`Error deleting file: ${err}`);
-                else console.log(`File deleted: ${filePath}`);
+            // Return success response with the saved resume data
+            return res.status(201).json({
+                success: true,
+                message: 'Resume uploaded and parsed successfully',
+                data: savedResume
             });
-
-            res.status(201).json(savedResume);        } else {
-            console.error('Failed to generate response from parsing function'); // Debugging log
-            res.status(500).json({ error: 'Failed to parse resume' });
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: 'Failed to parse resume'
+            });
         }
     } catch (error) {
         console.error('Error in uploadResume:', error); // Debugging log
@@ -110,15 +122,39 @@ const deleteResumeById = async (req, res) => {
     const { resumeId } = req.params;
 
     try {
-        const deletedResume = await Resume.findByIdAndDelete(resumeId);
-        if (!deletedResume) {
-            return res.status(404).json({ message: 'Resume not found' });
+        const resume = await Resume.findById(resumeId);
+        if (!resume) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Resume not found' 
+            });
         }
-        res.status(200).json({ message: 'Resume deleted successfully' });
+        
+        // Delete from database
+        await Resume.findByIdAndDelete(resumeId);
+        
+        // Note: We don't need to delete from Cloudinary unless we want to save storage
+        // If needed, extract the public_id from the URL and use cloudinary.uploader.destroy(public_id)
+        
+        res.status(200).json({ 
+            success: true,
+            message: 'Resume deleted successfully' 
+        });
     } catch (error) {
         console.error('Error deleting resume:', error);
-        res.status(500).json({ message: 'Error deleting resume' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Error deleting resume',
+            error: error.message
+        });
     }
 };
 
-module.exports = { uploadResume, upload, fetchAllResumes, getResumesByUserId, getResumeById: getResumeByIdController, updateResume: updateResumeController, deleteResumeById };
+module.exports = { 
+    uploadResume, 
+    fetchAllResumes, 
+    getResumesByUserId, 
+    getResumeById: getResumeByIdController, 
+    updateResume: updateResumeController, 
+    deleteResumeById 
+};

@@ -68,18 +68,14 @@ const ManageProfile = () => {
                 setProfile({
                     name: response.data.name || '',
                     email: response.data.email || '',
-                    phonenumber: response.data.phonenumber || '',
-                });                
+                    phonenumber: response.data.phonenumber || '',                });                
                 // Set preview image if profile picture exists
                 if (response.data.profilepictureUrl) {
-                    // Use the full URL provided by the server
+                    // With Cloudinary, URLs are already complete
                     setPreviewImage(response.data.profilepictureUrl);
                 } else if (response.data.profilepicture) {
-                    // Fallback to constructing the URL manually
-                    const imageUrl = response.data.profilepicture.startsWith('http')
-                        ? response.data.profilepicture
-                        : `${process.env.REACT_APP_BACKEND_URL}${response.data.profilepicture}`;
-                    setPreviewImage(imageUrl);
+                    // Cloudinary provides complete URLs
+                    setPreviewImage(response.data.profilepicture);
                 }
             } catch (error) {
                 console.error('Error fetching user profile:', error);
@@ -324,17 +320,9 @@ const ManageProfile = () => {
                     'Content-Type': 'multipart/form-data',
                     'Authorization': `Bearer ${user.token}`
                 }
-            });
-              // Update profile image in cookies and context
-            // Use the full URL provided by the server if available
-            let imageUrl;
-            if (response.data.profilepictureUrl) {
-                imageUrl = response.data.profilepictureUrl;
-            } else if (response.data.profilepicture) {
-                imageUrl = response.data.profilepicture?.startsWith('http')
-                    ? response.data.profilepicture
-                    : `${process.env.REACT_APP_BACKEND_URL}${response.data.profilepicture}`;
-            }
+            });            // Update profile image in cookies and context
+            // Cloudinary returns a full URL directly
+            const imageUrl = response.data.profilepicture || response.data.profilepictureUrl;
             
             Cookies.set('profileImage', imageUrl);
             setUser({ ...user, profileImage: imageUrl });

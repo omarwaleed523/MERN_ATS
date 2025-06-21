@@ -17,10 +17,10 @@ const JobPostSchema = new mongoose.Schema({
         degree: String,
         university: String,
         location: String
-    }],
-    department: { type: String, required: true },
+    }],    department: { type: String, required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     recruiter: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    jobDescriptionUrl: { type: String }, // Cloudinary URL for job description file
     createdAt: { type: Date, default: Date.now }
 });
 

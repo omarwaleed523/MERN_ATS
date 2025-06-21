@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
+const { uploadToCloudinary } = require('../config/cloudinary');
 
 // Secret key for JWT signing
 const JWT_SECRET = process.env.JWT_SECRET || 'MERN_ATS_secure_key_2024';
@@ -50,10 +51,16 @@ const register = async (req, res) => {
       role: role || 'Candidate', // Default to Candidate if no role provided
       company: role === 'Recruiter' ? company : undefined // Only set company for recruiters
     });
-    
-    // Handle profile picture if provided
+      // Handle profile picture if provided
     if (req.file) {
-      user.profilepicture = `/uploads/${req.file.filename}`;
+      try {
+        // Upload to Cloudinary
+        const result = await uploadToCloudinary(req.file.buffer, 'profile_pictures');
+        user.profilepicture = result.secure_url;
+      } catch (uploadError) {
+        console.error('Error uploading to Cloudinary:', uploadError);
+        // Continue registration even if image upload fails
+      }
     }
     
     // Hash password
@@ -116,14 +123,11 @@ const login = async (req, res) => {
         message: 'Invalid credentials'
       });
     }
-    
-    // Generate JWT token
+      // Generate JWT token
     const token = generateToken(user);
     
-    // Format profile image URL if exists
-    const profileImage = user.profilepicture 
-      ? `/uploads/${path.basename(user.profilepicture)}`
-      : null;
+    // Profile image is already a full Cloudinary URL
+    const profileImage = user.profilepicture || null;
     
     // Return success response with user data and token
     res.status(200).json({
@@ -168,13 +172,12 @@ const getUserProfile = async (req, res) => {
         message: 'User not found'
       });
     }
-    
-    // Create a response object with user data
+      // Create a response object with user data
     const userResponse = user.toObject();
     
-    // Add the full URL for profile picture if it exists
+    // Cloudinary URLs are already full URLs, no need to modify
     if (user.profilepicture) {
-      userResponse.profilepictureUrl = `${req.protocol}://${req.get('host')}${user.profilepicture}`;
+      userResponse.profilepictureUrl = user.profilepicture;
     }
     
     res.json(userResponse);
@@ -351,30 +354,37 @@ const updateProfilePicture = async (req, res) => {
         message: 'No file uploaded'
       });
     }
-    
-    // Delete old profile picture if exists
+      // Delete old profile picture if exists
     if (user.profilepicture) {
       try {
-        const oldPicturePath = path.join(__dirname, '..', user.profilepicture);
-        if (fs.existsSync(oldPicturePath)) {
-          fs.unlinkSync(oldPicturePath);
-        }
+        // No need to delete from Cloudinary as we're keeping all images
+        // If you want to delete from Cloudinary, you would need to extract the public_id
+        // and use cloudinary.uploader.destroy(public_id)
       } catch (err) {
-        console.error('Error deleting old profile picture:', err);
+        console.error('Error handling old profile picture:', err);
       }
     }
-      // Update with new picture path - ensure the path is correct for frontend
-    user.profilepicture = `/uploads/${req.file.filename}`;
-    await user.save();
     
-    // Return success response with the full URL for the frontend
-    const fullProfilePictureUrl = `${req.protocol}://${req.get('host')}${user.profilepicture}`;
-    res.json({ 
-      success: true,
-      message: 'Profile picture updated successfully',
-      profilepicture: user.profilepicture,
-      profilepictureUrl: fullProfilePictureUrl
-    });
+    try {
+      // Upload to Cloudinary
+      const result = await uploadToCloudinary(req.file.buffer, 'profile_pictures');
+      user.profilepicture = result.secure_url;
+      await user.save();
+      
+      // Return success response with the Cloudinary URL
+      res.json({ 
+        success: true,
+        message: 'Profile picture updated successfully',
+        profilepicture: user.profilepicture,
+        profilepictureUrl: user.profilepicture // Already a full URL from Cloudinary
+      });
+    } catch (uploadError) {
+      console.error('Error uploading to Cloudinary:', uploadError);
+      return res.status(500).json({
+        success: false,
+        message: 'Error uploading profile picture to cloud storage'
+      });
+    }
   } catch (error) {
     console.error('Update profile picture error:', error.message);
     res.status(500).json({

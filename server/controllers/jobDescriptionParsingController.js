@@ -101,6 +101,36 @@ Example Output:
 `;
 
 /**
+ * Extract text from PDF buffer
+ * @param {Buffer} buffer - PDF file buffer
+ * @returns {Promise<string|null>} - Extracted text or null if error
+ */
+async function extractTextFromPdfBuffer(buffer) {
+    try {
+        const data = await pdf(buffer);
+        return data.text;
+    } catch (error) {
+        console.error('Error extracting text from PDF buffer:', error);
+        return null;
+    }
+}
+
+/**
+ * Extract text from DOCX buffer
+ * @param {Buffer} buffer - DOCX file buffer
+ * @returns {Promise<string|null>} - Extracted text or null if error
+ */
+async function extractTextFromDocxBuffer(buffer) {
+    try {
+        const result = await mammoth.extractRawText({ buffer });
+        return result.value;
+    } catch (error) {
+        console.error('Error extracting text from DOCX buffer:', error);
+        return null;
+    }
+}
+
+/**
  * Extract text from PDF file
  * @param {string} filePath - Path to the PDF file
  * @returns {Promise<string|null>} - Extracted text or null if error
@@ -108,8 +138,7 @@ Example Output:
 async function extractTextFromPdf(filePath) {
     try {
         const dataBuffer = fs.readFileSync(filePath);
-        const data = await pdf(dataBuffer);
-        return data.text;
+        return await extractTextFromPdfBuffer(dataBuffer);
     } catch (error) {
         console.error('Error extracting text from PDF:', error);
         return null;
@@ -132,23 +161,37 @@ async function extractTextFromDocx(filePath) {
 }
 
 /**
- * Extract text from file based on file type
- * @param {string} filePath - Path to the file
+ * Extract text from file based on file type or from buffer
+ * @param {string|Buffer} input - Path to the file or file buffer
+ * @param {string} [fileType] - File type when input is a buffer ('pdf' or 'docx')
  * @returns {Promise<string|null>} - Extracted text or null if error
  */
-async function extractText(filePath) {
-    if (!fs.existsSync(filePath)) {
-        console.error(`File not found: ${filePath}`);
-        return null;
-    }
-
+async function extractText(input, fileType) {
     try {
-        if (filePath.endsWith('.pdf')) {
-            return await extractTextFromPdf(filePath);
-        } else if (filePath.endsWith('.docx')) {
-            return await extractTextFromDocx(filePath);
+        // If input is a buffer, use buffer extraction methods
+        if (Buffer.isBuffer(input)) {
+            if (fileType === 'pdf') {
+                return await extractTextFromPdfBuffer(input);
+            } else if (fileType === 'docx') {
+                return await extractTextFromDocxBuffer(input);
+            } else {
+                console.error('Unsupported buffer file type');
+                return null;
+            }
+        }
+        
+        // If input is a file path, use file extraction methods
+        if (!fs.existsSync(input)) {
+            console.error(`File not found: ${input}`);
+            return null;
+        }
+
+        if (input.endsWith('.pdf')) {
+            return await extractTextFromPdf(input);
+        } else if (input.endsWith('.docx')) {
+            return await extractTextFromDocx(input);
         } else {
-            console.error(`Unsupported file format: ${filePath}`);
+            console.error(`Unsupported file format: ${input}`);
             return null;
         }
     } catch (error) {
@@ -362,13 +405,14 @@ function fallbackParseJobDescription(text) {
 }
 
 /**
- * Parse job description file and extract structured data
- * @param {string} filePath - Path to the job description file
+ * Parse job description file or buffer and extract structured data
+ * @param {string|Buffer} input - Path to the job description file or file buffer
+ * @param {string} [fileType] - File type when input is a buffer ('pdf' or 'docx')
  * @returns {Promise<Object|null>} - Parsed job data or null if error
  */
-async function parseJobDescriptionFile(filePath) {
+async function parseJobDescriptionFile(input, fileType) {
     // Extract text
-    const text = await extractText(filePath);
+    const text = await extractText(input, fileType);
     if (!text) {
         return null;
     }
@@ -399,6 +443,8 @@ module.exports = {
     extractText,
     extractTextFromPdf,
     extractTextFromDocx,
+    extractTextFromPdfBuffer,
+    extractTextFromDocxBuffer,
     validateJsonStructure,
     VALID_DEPARTMENTS
 };

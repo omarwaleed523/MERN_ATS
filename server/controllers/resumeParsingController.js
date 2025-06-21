@@ -2,6 +2,7 @@ const fs = require('fs');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const streamifier = require('streamifier');
 
 // Initialize Gemini AI
 const GEMINI_API_KEY = "AIzaSyA5l9-6IZvEZTbKvJsyAKQq8wkpNET_h6o";
@@ -56,6 +57,36 @@ Return the data in JSON format with these fields as keys.
 `;
 
 /**
+ * Extract text from PDF buffer
+ * @param {Buffer} buffer - PDF file buffer
+ * @returns {Promise<string|null>} - Extracted text or null if error
+ */
+async function extractTextFromPdfBuffer(buffer) {
+    try {
+        const data = await pdf(buffer);
+        return data.text;
+    } catch (error) {
+        console.error('Error extracting text from PDF buffer:', error);
+        return null;
+    }
+}
+
+/**
+ * Extract text from DOCX buffer
+ * @param {Buffer} buffer - DOCX file buffer
+ * @returns {Promise<string|null>} - Extracted text or null if error
+ */
+async function extractTextFromDocxBuffer(buffer) {
+    try {
+        const result = await mammoth.extractRawText({ buffer });
+        return result.value.replace(/\t/g, ' '); // Replace tabs with spaces
+    } catch (error) {
+        console.error('Error extracting text from DOCX buffer:', error);
+        return null;
+    }
+}
+
+/**
  * Extract text from PDF file
  * @param {string} filePath - Path to the PDF file
  * @returns {Promise<string|null>} - Extracted text or null if error
@@ -63,8 +94,7 @@ Return the data in JSON format with these fields as keys.
 async function extractTextFromPdf(filePath) {
     try {
         const dataBuffer = fs.readFileSync(filePath);
-        const data = await pdf(dataBuffer);
-        return data.text;
+        return await extractTextFromPdfBuffer(dataBuffer);
     } catch (error) {
         console.error('Error extracting text from PDF:', error);
         return null;
@@ -286,22 +316,43 @@ function fallbackParseResume(text) {
 }
 
 /**
- * Parse resume file and extract structured data
- * @param {string} filePath - Path to the resume file
+ * Parse resume file and extract structured data * @param {string|Buffer} input - Path to the resume file or buffer containing file data
+ * @param {string} [fileType] - Optional file type ('pdf' or 'docx') when input is a buffer
  * @returns {Promise<Object|null>} - Parsed resume data or null if error
  */
-async function parseResumeFile(filePath) {
+async function parseResumeFile(input, fileType) {
     let extractedText = null;
 
-    // Extract text based on file type
-    if (filePath.endsWith('.pdf')) {
-        extractedText = await extractTextFromPdf(filePath);
-    } else if (filePath.endsWith('.docx')) {
-        extractedText = await extractTextFromDocx(filePath);
+    // Check if input is a buffer or file path
+    if (Buffer.isBuffer(input)) {
+        // Input is a buffer, use fileType parameter
+        if (!fileType) {
+            console.error('File type must be specified when input is a buffer');
+            return null;
+        }
+        
+        if (fileType === 'pdf' || fileType.includes('pdf')) {
+            extractedText = await extractTextFromPdfBuffer(input);
+        } else if (fileType === 'docx' || fileType.includes('docx') || fileType.includes('document')) {
+            extractedText = await extractTextFromDocxBuffer(input);
+        } else {
+            console.error('Unsupported file format:', fileType);
+            return null;
+        }
+    } else if (typeof input === 'string') {
+        // Input is a file path
+        if (input.endsWith('.pdf')) {
+            extractedText = await extractTextFromPdf(input);
+        } else if (input.endsWith('.docx')) {
+            extractedText = await extractTextFromDocx(input);
+        } else {
+            console.error('Unsupported file format');
+            return null;
+        }
     } else {
-        console.error('Unsupported file format');
+        console.error('Input must be a file path string or a buffer');
         return null;
-    }    if (!extractedText) {
+    }if (!extractedText) {
         console.error('Failed to extract text');
         return null;
     }

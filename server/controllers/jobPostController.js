@@ -1,28 +1,10 @@
 const Jobpost = require('../models/Jobpost');
 const { parseJobDescriptionFile } = require('./jobDescriptionParsingController');
-const fs = require('fs').promises;
 const multer = require('multer');
-const path = require('path');
+const { uploadToCloudinary } = require('../config/cloudinary');
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '..', 'uploads');
-fs.mkdir(uploadsDir, { recursive: true }).catch(console.error);
-
-// Multer storage for file uploads
-const storage = multer.diskStorage({
-    destination: async function (req, file, cb) {
-        try {
-            await fs.mkdir(uploadsDir, { recursive: true });
-            cb(null, uploadsDir);
-        } catch (error) {
-            cb(error);
-        }
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + '-' + file.originalname);
-    }
-});
+// Use memory storage for multer to handle uploads directly to Cloudinary
+const storage = multer.memoryStorage();
 const uploadFile = multer({
     storage: storage,
     fileFilter: (req, file, cb) => {
@@ -147,13 +129,19 @@ const uploadJobPost = async (req, res) => {
 
     const { userId } = req.body;
     if (!userId) {
-        await fs.unlink(req.file.path).catch(console.error);
         return res.status(400).json({ message: 'User ID is required' });
     }
 
-    const filePath = req.file.path;
-    console.log(`Processing file: ${filePath}`);    try {
-        const parseResponse = await parseJobDescriptionFile(filePath);
+    try {
+        // Upload file to Cloudinary
+        const result = await uploadToCloudinary(req.file.buffer, 'job_descriptions');
+        const cloudinaryUrl = result.secure_url;
+        
+        // Determine file type based on mimetype or original filename
+        const fileType = req.file.mimetype.includes('pdf') ? 'pdf' : 'docx';
+        
+        // Parse the job description from the buffer
+        const parseResponse = await parseJobDescriptionFile(req.file.buffer, fileType);
         console.log('Parse response:', parseResponse);
 
         if (!parseResponse) {
@@ -169,7 +157,8 @@ const uploadJobPost = async (req, res) => {
             education: parseResponse.education || [],
             department: parseResponse.department,
             userId,
-            recruiter: userId // Set the recruiter field to match userId
+            recruiter: userId, // Set the recruiter field to match userId
+            jobDescriptionUrl: cloudinaryUrl // Store the Cloudinary URL
         });
 
         await jobPost.save();
@@ -177,17 +166,12 @@ const uploadJobPost = async (req, res) => {
             message: 'Job post created successfully!',
             jobPost
         });
-
     } catch (error) {
         console.error('Error in uploadJobPost:', error);
         res.status(500).json({
             message: 'Failed to create job post',
             error: error.message
         });
-
-    } finally {
-        // Clean up the uploaded file
-        await fs.unlink(filePath).catch(console.error);
     }
 };
 
@@ -197,6 +181,5 @@ module.exports = {
     getJobPostById,
     updateJobPost,
     deleteJobPost,
-    uploadJobPost,   // Export the new upload method
-    uploadFile       // Export the multer instance for routes
+    uploadJobPost   // Export the new upload method
 };

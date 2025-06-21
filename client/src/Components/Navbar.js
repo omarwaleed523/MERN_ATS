@@ -23,15 +23,9 @@ const Navbar = () => {
         const savedTheme = localStorage.getItem('theme') || 'light';
         
         document.querySelector('html').setAttribute('data-theme', savedTheme);
-        setCurrentTheme(savedTheme);
-
-        if (userId && token) {
-            // Format profile image URL if it doesn't start with http
-            const formattedProfileImage = profileImage && !profileImage.startsWith('http') 
-                ? `${process.env.REACT_APP_BACKEND_URL}${profileImage}` 
-                : profileImage;
-                
-            setUser({ profileImage: formattedProfileImage, role, userId, name, token });
+        setCurrentTheme(savedTheme);        if (userId && token) {
+            // With Cloudinary, profileImage is already a full URL
+            setUser({ profileImage, role, userId, name, token });
             setIsLoggedIn(true);
             // Reset profile image error state when user context changes
             setProfileImageError(false);

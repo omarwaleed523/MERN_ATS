@@ -47,16 +47,11 @@ const Login = () => {
         setLoading(false);
         return;
       }
-      
-      // Extract user data from response
+        // Extract user data from response
       const { userId, role, token, name, profileImage } = response.data;
       
-      // Make sure profileImage is a full URL
-      const profileImageUrl = profileImage
-        ? profileImage.startsWith('http') 
-          ? profileImage 
-          : `${process.env.REACT_APP_BACKEND_URL}${profileImage}`
-        : null;
+      // With Cloudinary, profileImage is already a full URL
+      const profileImageUrl = profileImage || null;
 
       // Set cookies for user data (7 day expiry)
       Cookies.set('userId', userId, { expires: 7 });

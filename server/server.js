@@ -5,17 +5,11 @@ const resumeRoutes = require('./routes/resumeRoutes');
 const cors = require('cors'); // Import cors
 const dotenv = require('dotenv');
 
-// Load environment variables based on environment
-if (process.env.NODE_ENV !== "production") {
-  dotenv.config({
-    path: "./config/.env",
-  });
-} else {
-  dotenv.config();
-}
+// Load environment variables
+dotenv.config();
+console.log('Environment variables loaded');
 
 const path = require('path');
-const fs = require('fs'); // Add fs module
 const applicationRoutes = require('./routes/applicationroutes');
 const jobPostRoutes = require('./routes/jobpostroutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -38,15 +32,6 @@ const corsConfig = {
 
 app.options("", cors(corsConfig));
 app.use(cors(corsConfig));
-
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Serve static files from uploads directory
-app.use('/uploads', express.static(uploadsDir));
 
 // Routes
 app.use('/api/auth', authRoutes);

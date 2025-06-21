@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
 const auth = require('../middleware/auth');
+const { upload } = require('../config/cloudinary');
 const {
   register,
   login,
@@ -13,33 +12,6 @@ const {
   updateProfilePicture,
   logout
 } = require('../controllers/authController');
-
-// Configure multer storage for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
-// Set up multer upload with file type filtering
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|gif|heic|pdf/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
-    
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only JPEG, JPG, PNG, GIF, HEIC and PDF files are allowed'));
-    }
-  }
-});
 
 // Public routes (no authentication required)
 router.post('/register', upload.single('profilepicture'), register);
